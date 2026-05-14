@@ -5,9 +5,18 @@ local Icons = SCM.Icons
 local Cache = SCM.Cache
 local Constants = SCM.Constants
 
+local NumericRuleFormatter = C_StringUtil.CreateNumericRuleFormatter()
+Cooldowns.NumericRuleFormatter = NumericRuleFormatter
+
+function Cooldowns:ApplyFormatterSettings()
+	local options = SCM.db.profile.options
+
+	NumericRuleFormatter:SetBreakpoints(options.cooldownBreakpoints)
+end
+
 local function OnBuffCooldownSet(self)
 	local parent = (self.SCMConfig and self) or self:GetParent()
-	if not parent or not parent.SCMConfig then
+	if not parent or not parent.SCMConfig or (not parent.SCMCheckCooldownFrame and not parent.auraInstanceID) then
 		return
 	end
 
@@ -33,6 +42,7 @@ local function OnBuffCooldownEnd(self)
 	if not parent or not parent.SCMConfig then
 		return
 	end
+
 	if parent.SCMAuraInstanceID and not parent.SCMCheckCooldownFrame then
 		if not C_UnitAuras.GetAuraDataByAuraInstanceID("player", parent.SCMAuraInstanceID) then
 			parent.SCMAuraInstanceID = nil

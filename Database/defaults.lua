@@ -106,6 +106,7 @@ SCM.DefaultDB = {
 			chargeRelativePoint = "BOTTOMRIGHT",
 			chargeXOffset = -8,
 			chargeYOffset = 10,
+
 			changeCooldownFont = true,
 			cooldownFont = "Expressway",
 			cooldownFontSize = 0.6,
@@ -113,6 +114,7 @@ SCM.DefaultDB = {
 			cooldownFontColor = { r = 1, g = 1, b = 1, a = 1 },
 			cooldownXOffset = 0,
 			cooldownYOffset = 0,
+
 			useCustomGlow = false,
 			glowType = "Proc",
 			borderSize = 1,

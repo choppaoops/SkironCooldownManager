@@ -75,6 +75,11 @@ local function NormalizeTrackedBarSpellConfig(spellConfig)
 end
 
 function SCM:UpdateDB()
+	local options = self.db.profile.options
+	if not options.cooldownBreakpoints or #options.cooldownBreakpoints == 0 then
+		options.cooldownBreakpoints = CopyTable(self.Constants.CooldownTimer.DefaultBreakpoints)
+	end
+
 	local firstGlobalGroup = SCM.Utils.ToGlobalGroup(1)
 	local firstBuffBarGroup = SCM.Utils.ToBuffBarGroup(1)
 	local class = Utils.GetClass()

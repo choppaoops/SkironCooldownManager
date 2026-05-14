@@ -431,6 +431,7 @@ function SCM:ApplyOptions()
 	local options = self.db.profile.options
 	self:SetHideWhenInactive(options.hideBuffsWhenInactive)
 	self:ApplyAttributeDriver(options.hideWhileMounted)
+	self.Cooldowns:ApplyFormatterSettings()
 end
 
 local function OpenOptions()

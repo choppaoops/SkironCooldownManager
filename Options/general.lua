@@ -160,6 +160,39 @@ local function AddCustomGlowOptions(dynamicGlowSettingsGroup)
 	end
 end
 
+local function GetCooldownBreakpointComponents(displayStyle, minValue)
+	if displayStyle == "clock" then
+		if minValue >= 86400 then
+			return {
+				{ div = 86400 },
+				{ div = 3600, mod = 24 },
+			}
+		elseif minValue >= 3600 then
+			return {
+				{ div = 3600 },
+				{ div = 60, mod = 60 },
+			}
+		else
+			return {
+				{ div = 60 },
+				{ mod = 60 },
+			}
+		end
+	elseif displayStyle == "minutes" then
+		return {
+			{ div = 60 },
+		}
+	elseif displayStyle == "hours" then
+		return {
+			{ div = 3600 },
+		}
+	elseif displayStyle == "days" then
+		return {
+			{ div = 86400 },
+		}
+	end
+end
+
 local function SelectGlobalSettingsTab(tabWidget, group, options)
 	tabWidget:ReleaseChildren()
 
@@ -568,7 +601,7 @@ local function SelectGlobalSettingsTab(tabWidget, group, options)
 		local cooldownTextSettings = AceGUI:Create("InlineGroup")
 		cooldownTextSettings:SetLayout("flow")
 		cooldownTextSettings:SetFullWidth(true)
-		cooldownTextSettings:SetTitle("Cooldown Text")
+		cooldownTextSettings:SetTitle("Cooldown Font")
 		tabWidget:AddChild(cooldownTextSettings)
 
 		local enableCooldownFont = AceGUI:Create("CheckBox")
@@ -652,6 +685,144 @@ local function SelectGlobalSettingsTab(tabWidget, group, options)
 			options.cooldownYOffset = value
 		end)
 		cooldownTextSettings:AddChild(cooldownYOffset)
+
+		local cooldownTimerSettings = AceGUI:Create("InlineGroup")
+		cooldownTimerSettings:SetLayout("flow")
+		cooldownTimerSettings:SetFullWidth(true)
+		cooldownTimerSettings:SetTitle("Cooldown Timer")
+		tabWidget:AddChild(cooldownTimerSettings)
+
+		local Constants = SCM.Constants.CooldownTimer
+		local breakpoints = options.cooldownBreakpoints
+		local breakpointTabsTbl = {}
+		for i = 1, #breakpoints do
+			breakpointTabsTbl[i] = { value = i, text = "Breakpoint " .. i }
+		end
+
+		local breakpointTabs = AceGUI:Create("TabGroup")
+		breakpointTabs:SetLayout("flow")
+		breakpointTabs:SetFullWidth(true)
+		breakpointTabs:SetTabs(breakpointTabsTbl)
+		breakpointTabs:SetCallback("OnGroupSelected", function(self, event, breakpointIndex)
+			self:ReleaseChildren()
+
+			breakpoints = options.cooldownBreakpoints
+			local selectedBreakpoint = breakpoints[breakpointIndex]
+
+			local breakpointButtonGroup = AceGUI:Create("SimpleGroup")
+			breakpointButtonGroup:SetFullWidth(true)
+			breakpointButtonGroup:SetLayout("flow")
+			self:AddChild(breakpointButtonGroup)
+
+			local addBreakpointButton = AceGUI:Create("Button")
+			addBreakpointButton:SetText("Add Breakpoint")
+			addBreakpointButton:SetRelativeWidth(0.5)
+			addBreakpointButton:SetCallback("OnClick", function()
+				local breakpoint = CopyTable(Constants.DisplayStyleSettings.seconds)
+				breakpoint.threshold = 5
+				breakpoint.displayStyle = "seconds"
+				breakpoint.components = GetCooldownBreakpointComponents(breakpoint.displayStyle, breakpoint.threshold)
+				breakpoints[#breakpoints + 1] = breakpoint
+				breakpointIndex = #breakpoints
+				SCM.Cooldowns:ApplyFormatterSettings()
+
+				breakpointTabsTbl = {}
+				for i = 1, #breakpoints do
+					breakpointTabsTbl[i] = { value = i, text = "Breakpoint " .. i }
+				end
+				self:SetTabs(breakpointTabsTbl)
+				self:SelectTab(breakpointIndex)
+			end)
+			breakpointButtonGroup:AddChild(addBreakpointButton)
+
+			local removeBreakpointButton = AceGUI:Create("Button")
+			removeBreakpointButton:SetText("Remove Breakpoint")
+			removeBreakpointButton:SetRelativeWidth(0.5)
+			removeBreakpointButton:SetDisabled(#breakpoints <= 1)
+			removeBreakpointButton:SetCallback("OnClick", function()
+				tremove(breakpoints, breakpointIndex)
+
+				if breakpointIndex > #breakpoints then
+					breakpointIndex = #breakpoints
+				end
+				SCM.Cooldowns:ApplyFormatterSettings()
+
+				breakpointTabsTbl = {}
+				for i = 1, #breakpoints do
+					breakpointTabsTbl[i] = { value = i, text = "Breakpoint " .. i }
+				end
+				self:SetTabs(breakpointTabsTbl)
+				self:SelectTab(breakpointIndex)
+			end)
+			breakpointButtonGroup:AddChild(removeBreakpointButton)
+
+			local minValueInput = AceGUI:Create("EditBox")
+			minValueInput:SetRelativeWidth(0.5)
+			minValueInput:SetLabel("Min Value (in seconds)")
+			minValueInput:SetText(tostring(selectedBreakpoint.threshold or 0))
+			minValueInput:SetCallback("OnEnterPressed", function(input, _, text)
+				local value = tonumber(text)
+				if not value then
+					input:SetText(tostring(selectedBreakpoint.threshold or 0))
+					return
+				end
+
+				local displayStyle = selectedBreakpoint.displayStyle
+				local styleSettings = Constants.DisplayStyleSettings[displayStyle]
+				selectedBreakpoint.threshold = value
+				selectedBreakpoint.step = styleSettings.step
+				selectedBreakpoint.rounding = styleSettings.rounding
+				selectedBreakpoint.format = styleSettings.format
+				selectedBreakpoint.components = GetCooldownBreakpointComponents(displayStyle, value)
+
+				SCM.Cooldowns:ApplyFormatterSettings()
+				self:SelectTab(breakpointIndex)
+			end)
+			self:AddChild(minValueInput)
+
+			local displayStyle = selectedBreakpoint.displayStyle
+
+			local breakpointDisplayStyle = AceGUI:Create("Dropdown")
+			breakpointDisplayStyle:SetRelativeWidth(0.5)
+			breakpointDisplayStyle:SetLabel("Display Style")
+			breakpointDisplayStyle:SetList(Constants.DisplayStyle[1], Constants.DisplayStyle[2])
+			breakpointDisplayStyle:SetValue(displayStyle)
+			breakpointDisplayStyle:SetCallback("OnValueChanged", function(_, _, value)
+				local styleSettings = Constants.DisplayStyleSettings[value]
+
+				selectedBreakpoint.displayStyle = value
+				selectedBreakpoint.step = styleSettings.step
+				selectedBreakpoint.rounding = styleSettings.rounding
+				selectedBreakpoint.format = styleSettings.format
+				selectedBreakpoint.components = GetCooldownBreakpointComponents(value, selectedBreakpoint.threshold or 0)
+
+				SCM.Cooldowns:ApplyFormatterSettings()
+				self:SelectTab(breakpointIndex)
+			end)
+			self:AddChild(breakpointDisplayStyle)
+		end)
+		breakpointTabs:SelectTab(1)
+		cooldownTimerSettings:AddChild(breakpointTabs)
+
+		local cooldownTimerTestEditBox = AceGUI:Create("EditBox")
+		cooldownTimerTestEditBox:SetRelativeWidth(0.5)
+		cooldownTimerTestEditBox:SetText("")
+		cooldownTimerTestEditBox:SetLabel("Enter Test Duration")
+		cooldownTimerSettings:AddChild(cooldownTimerTestEditBox)
+
+		local cooldownTimerTestResult = AceGUI:Create("Label")
+		cooldownTimerTestResult:SetRelativeWidth(0.5)
+		cooldownTimerTestResult:SetText("Output: (No Input)")
+		cooldownTimerSettings:AddChild(cooldownTimerTestResult)
+
+		cooldownTimerTestEditBox:SetCallback("OnEnterPressed", function(_, _, value)
+			if tonumber(value) then
+				cooldownTimerTestResult:SetText(string.format("Output: %s", SCM.Cooldowns.NumericRuleFormatter:FormatNumber(tonumber(value))))
+			else
+				cooldownTimerTestResult:SetText("Output: (Invalid Input)")
+			end
+		end)
+
 	elseif group == "Glow" then
 		local glowSettings = AceGUI:Create("InlineGroup")
 		glowSettings:SetLayout("flow")
@@ -827,6 +998,8 @@ local function SelectGlobalSettingsTab(tabWidget, group, options)
 		end)
 		fontSettings:AddChild(fontOutline)
 	end
+
+	tabWidget:DoLayout()
 end
 
 local function General(self, frame, group)
@@ -856,7 +1029,7 @@ local function General(self, frame, group)
 	local globalSettingsTabs = AceGUI:Create("TabGroup")
 	globalSettingsTabs:SetTabs(SCM.Defaults.GlobalSettingsTabs)
 	globalSettingsTabs:SetFullWidth(true)
-	globalSettingsTabs:SetFullHeight(true)
+	--globalSettingsTabs:SetFullHeight(true)
 	globalSettingsTabs:SetLayout("flow")
 	globalSettingsTabs:SetCallback("OnGroupSelected", function(self, event, group)
 		SelectGlobalSettingsTab(self, group, options)

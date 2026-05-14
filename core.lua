@@ -182,6 +182,7 @@ end
 
 function SCM:PLAYER_REGEN_ENABLED()
 	if not self.appliedOptions then
+		self:UpdateDB()
 		self:ApplyOptions()
 	end
 
@@ -191,6 +192,7 @@ end
 function SCM:PLAYER_REGEN_DISABLED() end
 
 function SCM:EDIT_MODE_LAYOUTS_UPDATED()
+	SCM:UpdateDB()
 	SCM:ApplyOptions()
 end
 
@@ -254,6 +256,7 @@ local function OnProfileChanged(_, _, _, skipReset)
 	end
 
 	SCM:InvalidateAnchorLinks()
+	SCM:UpdateDB()
 
 	SCM.appliedOptions = nil
 	SCM:ApplyOptions()

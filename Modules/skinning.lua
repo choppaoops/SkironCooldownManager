@@ -121,6 +121,12 @@ local function ApplyCooldownStyle(child, options)
 			local parent = self:GetParent()
 			local forceActiveSwipe = parent.SCMConfig and parent.SCMConfig.forceActiveSwipe
 
+			local cooldownFormatter = SCM.Cooldowns.NumericRuleFormatter
+			if cooldownFormatter and not self.SCMFormatter then
+				self.SCMFormatter = true
+				self:SetCountdownFormatter(cooldownFormatter)
+			end
+
 			if parent.auraInstanceID or parent.SCMFakeAuraInstanceID or parent.SCMBuffOptions then
 				if options.disableRegularIconActiveSwipe and not forceActiveSwipe then
 					if options.recolorNormalSwipe then

@@ -348,6 +348,7 @@ function SCM:ImportProfile(profileName, importString)
 
 	self.db:RegisterDefaults(SCM.DefaultDB)
 	SCM.appliedOptions = nil
+	SCM:UpdateDB()
 	SCM:ApplyOptions()
 
 	SCM.RefreshCooldownViewerData(true)
@@ -397,6 +398,7 @@ function SCM:ImportGlobalSettingsFromData(data)
 
 	self.db:RegisterDefaults(SCM.DefaultDB)
 	SCM.appliedOptions = nil
+	SCM:UpdateDB()
 	SCM:ApplyOptions()
 
 	SCM.RefreshCooldownViewerData(true)

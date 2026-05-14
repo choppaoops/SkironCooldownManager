@@ -26,6 +26,7 @@ Custom-Widgets\AceGUIContainer-SCMTabGroup.lua
 Custom-Widgets\AceGUIContainer-SCMScrollFrame.lua
 Custom-Widgets\AceGUIContainer-SCMHorizontalScrollFrame.lua
 
+Database\curves.lua
 Database\constants.lua
 Database\defaults.lua
 Database\sharedmedia.lua
