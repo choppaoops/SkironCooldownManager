@@ -521,6 +521,7 @@ Constants.FakeAuras = {
 
 	-- SHAMAN
 	[5394] = 15, -- Healing Stream Totem
+	[108280] = 10, -- Healing Tide Totem
 	[98008] = 6, -- Spirit Link Totem
 	[192077] = 7, -- Wind Rush Totem
 	[355580] = 6, -- Static Field Totem
