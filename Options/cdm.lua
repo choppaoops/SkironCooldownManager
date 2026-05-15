@@ -323,7 +323,7 @@ local function CreateAddSpellDropdown(owner, rootDescription, scrollFrame, ancho
 	end
 
 	local function GetSortRank(info, data)
-		if data.category < 0 then
+		if type(data.category) == "number" and data.category < 0 then
 			return 4
 		end
 		if info.isKnown then
@@ -360,10 +360,10 @@ local function CreateAddSpellDropdown(owner, rootDescription, scrollFrame, ancho
 			if configID then
 				info.cooldownID = item.cooldownID
 				info.configID = configID
-				info.isDisabled = data.category < 0
+				info.isDisabled = type(data.category) == "number" and data.category < 0
 				info.category = data.category
 
-				local activeColor = (data.category < 0 and colorDisabled) or (info.isKnown and colorKnown) or colorUnknown
+				local activeColor = (type(data.category) == "number" and data.category < 0 and colorDisabled) or (info.isKnown and colorKnown) or colorUnknown
 				parentButton:CreateButton(string.format("|T%d:0|t |cff%s%s (%d)|r", C_Spell.GetSpellTexture(info.spellID), activeColor, C_Spell.GetSpellName(info.spellID), cooldownID), function(info)
 					if not SCM:IsSpellInData(info.cooldownID, info.category) and not DoesScrollFrameContainSpellConfig(scrollFrame, info.configID, info.cooldownID) then
 						local dataIndex = scrollFrame:AddSpellBySpellID(info)
@@ -385,7 +385,7 @@ local function CreateAddSpellDropdown(owner, rootDescription, scrollFrame, ancho
 			local info = C_CooldownViewer.GetCooldownViewerCooldownInfo(cooldownID)
 			local data = cooldownInfoByID[cooldownID]
 
-			if info and data and (data.category == 3 or data.category < 0) then
+			if info and data and type(data.category) == "number" and (data.category == 3 or data.category < 0) then
 				local spellID = GetSpellIDForCooldownInfo(info)
 				local configID = GetCooldownConfigKey(cooldownID)
 				info.spellID = spellID
@@ -401,7 +401,7 @@ local function CreateAddSpellDropdown(owner, rootDescription, scrollFrame, ancho
 			local info = C_CooldownViewer.GetCooldownViewerCooldownInfo(cooldownID)
 			local data = cooldownInfoByID[cooldownID]
 
-			if info and data and (data.category == 3 or data.category < 0) then
+			if info and data and type(data.category) == "number" and (data.category == 3 or data.category < 0) then
 				local spellID = GetSpellIDForCooldownInfo(info)
 				local configID = GetCooldownConfigKey(cooldownID)
 				info.spellID = spellID
@@ -487,7 +487,7 @@ local function CreateAddSpellDropdown(owner, rootDescription, scrollFrame, ancho
 		local info = C_CooldownViewer.GetCooldownViewerCooldownInfo(cooldownID)
 		local data = cooldownInfoByID[cooldownID]
 
-		if info and data and data.category <= 3 then
+		if info and data and type(data.category) == "number" and data.category <= 3 then
 			local spellID = GetSpellIDForCooldownInfo(info)
 			local configID = GetCooldownConfigKey(cooldownID)
 			info.spellID = spellID
