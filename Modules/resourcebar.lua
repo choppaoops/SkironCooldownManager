@@ -34,7 +34,7 @@ local function GetPowerColorByInfo(powerToken, powerType)
 end
 
 local function GetPowerColor(powerToken, powerType, altR, altG, altB)
-	local barOptions = SCM.db.profile.options.resourceBar
+	local barOptions = SCM.resourceBarConfig
 	local colorOverrides = barOptions and barOptions.powerTypeColorOverrides
 	local powerTypeColorOverride = powerToken and colorOverrides and colorOverrides[powerToken]
 
@@ -246,17 +246,16 @@ local function GetTipOfTheSpearValue()
 	return currentValue, maxValue
 end
 
-
 local function GetIciclesValue()
-    local currentValue = 0
-    local maxValue = 5
+	local currentValue = 0
+	local maxValue = 5
 
-    local auraData = C_UnitAuras.GetPlayerAuraBySpellID(SPELL_ID_ICICLES)
-    if auraData then
-        currentValue = auraData.applications or 0
-    end
+	local auraData = C_UnitAuras.GetPlayerAuraBySpellID(SPELL_ID_ICICLES)
+	if auraData then
+		currentValue = auraData.applications or 0
+	end
 
-    return currentValue, maxValue
+	return currentValue, maxValue
 end
 
 local function GetMaelstromWeaponValue()
@@ -321,8 +320,8 @@ local function GetCurrentPowerValue(resourceKind, powerType, spellID, segmentCou
 	end
 
 	if resourceKind == "icicles" then
-        return GetIciclesValue()
-    end
+		return GetIciclesValue()
+	end
 
 	local currentValue = UnitPower("player", powerType)
 	local maxValue = UnitPowerMax("player", powerType)
@@ -742,7 +741,7 @@ local function UpdateSegments(bar, maxValue, currentValue, resourceSegmentValues
 	local overflowR, overflowG, overflowB = CHARGED_COMBO_POINT_COLOR.r, CHARGED_COMBO_POINT_COLOR.g, CHARGED_COMBO_POINT_COLOR.b
 
 	if bar.resourceKind == "maelstromWeapon" then
-		local overflowColor = SCM.db.profile.options.resourceBar.maelstromOverflowColor
+		local overflowColor = SCM.resourceBarConfig.maelstromOverflowColor
 		if overflowColor and overflowColor.r and overflowColor.g and overflowColor.b then
 			overflowR, overflowG, overflowB = overflowColor.r, overflowColor.g, overflowColor.b
 		end
@@ -847,7 +846,7 @@ local function InitializeBarSkin(bar)
 	PixelUtil.SetPoint(bar.BorderFrame, "TOPLEFT", bar, "TOPLEFT", 0, 0)
 	PixelUtil.SetPoint(bar.BorderFrame, "BOTTOMRIGHT", bar, "BOTTOMRIGHT", 0, 0)
 
-	local barOptions = bar.barOptions or SCM.db.profile.options.resourceBar
+	local barOptions = bar.barOptions or SCM.resourceBarConfig
 	UpdateResourceBarBorder(bar, barOptions)
 	bar.SCMStyled = true
 end
@@ -943,7 +942,7 @@ function SCM:ApplyResourceBarAttributeDriver(forceHide)
 	if forceHide then
 		RegisterAttributeDriver(container, "state-visibility", "hide")
 	else
-		RegisterAttributeDriver(container, "state-visibility", SCM:GetVisibilityConditions(self.db.profile.options.resourceBar))
+		RegisterAttributeDriver(container, "state-visibility", SCM:GetVisibilityConditions(self.resourceBarConfig))
 	end
 
 	if container.SCMResourceBarInitialized and container.UpdateContainerShownState then
@@ -959,7 +958,7 @@ local function SetBarHeight(bar, height)
 end
 
 function SCMResourceBarControllerMixin:ApplyResourceBarOptions()
-	local barOptions = SCM.db.profile.options.resourceBar
+	local barOptions = SCM.resourceBarConfig
 	self.barOptions = barOptions
 	self.primaryBarOptions = barOptions.primaryBar
 	self.secondaryBarOptions = barOptions.secondaryBar
@@ -1106,54 +1105,54 @@ end
 function SCMResourceBarControllerMixin:ConfigurePrimaryBar()
 	local powerType, powerToken, altR, altG, altB = UnitPowerType("player")
 
-	--local forceMana = false
-	-- if UnitClassBase("player") == "DRUID" then
-	-- 	local shapeshiftFormID = GetShapeshiftFormID()
-	-- 	local customPowerType
-	-- 	local druidFormPowerTypes = GetDruidFormPowerTypes(self.primaryBarOptions)
-	-- 	if not shapeshiftFormID then
-	-- 		customPowerType = druidFormPowerTypes and druidFormPowerTypes[0]
-	-- 	elseif shapeshiftFormID == DRUID_BEAR_FORM then
-	-- 		customPowerType = druidFormPowerTypes and druidFormPowerTypes[1]
-	-- 	elseif shapeshiftFormID == DRUID_CAT_FORM then
-	-- 		customPowerType = druidFormPowerTypes and druidFormPowerTypes[2]
-	-- 	elseif shapeshiftFormID == DRUID_TRAVEL_FORM or shapeshiftFormID == DRUID_FLIGHT_FORM or shapeshiftFormID == DRUID_AQUATIC_FORM then
-	-- 		customPowerType = druidFormPowerTypes and druidFormPowerTypes[3]
-	-- 	elseif shapeshiftFormID >= DRUID_MOONKIN_FORM_1 and shapeshiftFormID <= DRUID_MOONKIN_FORM_2 then
-	-- 		customPowerType = druidFormPowerTypes and druidFormPowerTypes[4]
-	-- 	end
--- 
-	-- 	if customPowerType == "none" then
-	-- 		powerType = nil
-	-- 		powerToken = nil
-	-- 	else
-	-- 		powerType = customPowerType
-	-- 		powerToken = nil
--- 
-	-- 		if powerType == Enum.PowerType.Mana then
-	-- 			powerToken = "MANA"
-	-- 			forceMana = true
-	-- 		elseif powerType == Enum.PowerType.Rage then
-	-- 			powerToken = "RAGE"
-	-- 		elseif powerType == Enum.PowerType.Energy then
-	-- 			powerToken = "ENERGY"
-	-- 		elseif powerType == Enum.PowerType.LunarPower then
-	-- 			powerToken = "LUNAR_POWER"
-	-- 		end
--- 
-	-- 		local colorInfo = PowerBarColor[powerToken]
-	-- 		if colorInfo then
-	-- 			altR, altG, altB = colorInfo.r, colorInfo.g, colorInfo.b
-	-- 		end
-	-- 	end
-	-- end
+	local forceMana = false
+	if UnitClassBase("player") == "DRUID" and SCM.resourceBarConfig.active then
+		local shapeshiftFormID = GetShapeshiftFormID()
+		local customPowerType
+		local druidFormPowerTypes = GetDruidFormPowerTypes(self.primaryBarOptions)
+		if not shapeshiftFormID or shapeshiftFormID == 36 then
+			customPowerType = druidFormPowerTypes and druidFormPowerTypes[0]
+		elseif shapeshiftFormID == DRUID_BEAR_FORM then
+			customPowerType = druidFormPowerTypes and druidFormPowerTypes[1]
+		elseif shapeshiftFormID == DRUID_CAT_FORM then
+			customPowerType = druidFormPowerTypes and druidFormPowerTypes[2]
+		elseif shapeshiftFormID == DRUID_TRAVEL_FORM or shapeshiftFormID == DRUID_FLIGHT_FORM or shapeshiftFormID == DRUID_AQUATIC_FORM then
+			customPowerType = druidFormPowerTypes and druidFormPowerTypes[3]
+		elseif shapeshiftFormID >= DRUID_MOONKIN_FORM_1 and shapeshiftFormID <= DRUID_MOONKIN_FORM_2 then
+			customPowerType = druidFormPowerTypes and druidFormPowerTypes[4]
+		end
+		--
+		if customPowerType == "none" then
+			powerType = nil
+			powerToken = nil
+		else
+			powerType = customPowerType
+			powerToken = nil
+			--
+			if powerType == Enum.PowerType.Mana then
+				powerToken = "MANA"
+				forceMana = true
+			elseif powerType == Enum.PowerType.Rage then
+				powerToken = "RAGE"
+			elseif powerType == Enum.PowerType.Energy then
+				powerToken = "ENERGY"
+			elseif powerType == Enum.PowerType.LunarPower then
+				powerToken = "LUNAR_POWER"
+			end
+
+			local colorInfo = PowerBarColor[powerToken]
+			if colorInfo then
+				altR, altG, altB = colorInfo.r, colorInfo.g, colorInfo.b
+			end
+		end
+	end
 
 	if not powerType or not powerToken then
 		ResetResourceBar(self.PrimaryBar)
 		return false
 	end
 
-	if powerType == Enum.PowerType.Mana and ShouldHideManaForCurrentRole(self.primaryBarOptions) then
+	if powerType == Enum.PowerType.Mana and ShouldHideManaForCurrentRole(self.primaryBarOptions) and not forceMana then
 		ResetResourceBar(self.PrimaryBar)
 		return false
 	end
@@ -1188,37 +1187,38 @@ function SCMResourceBarControllerMixin:ConfigureSecondaryBar()
 		secondaryResource = nil
 	end
 
-	-- if UnitClassBase("player") == "DRUID" then
-	-- 	local shapeshiftFormID = GetShapeshiftFormID()
-	-- 	local customSecondaryResource
-	-- 	local druidFormPowerTypes = GetDruidFormPowerTypes(self.secondaryBarOptions)
--- 
-	-- 	if not shapeshiftFormID then
-	-- 		customSecondaryResource = druidFormPowerTypes and druidFormPowerTypes[0]
-	-- 	elseif shapeshiftFormID == DRUID_BEAR_FORM then
-	-- 		customSecondaryResource = druidFormPowerTypes and druidFormPowerTypes[1]
-	-- 	elseif shapeshiftFormID == DRUID_CAT_FORM then
-	-- 		customSecondaryResource = druidFormPowerTypes and druidFormPowerTypes[2]
-	-- 	elseif shapeshiftFormID == DRUID_TRAVEL_FORM or shapeshiftFormID == DRUID_FLIGHT_FORM or shapeshiftFormID == DRUID_AQUATIC_FORM then
-	-- 		customSecondaryResource = druidFormPowerTypes and druidFormPowerTypes[3]
-	-- 	elseif shapeshiftFormID >= DRUID_MOONKIN_FORM_1 and shapeshiftFormID <= DRUID_MOONKIN_FORM_2 then
-	-- 		customSecondaryResource = druidFormPowerTypes and druidFormPowerTypes[4]
-	-- 	end
--- 
-	-- 	if customSecondaryResource == "none" then
-	-- 		secondaryResource = nil
-	-- 	else
-	-- 		local primaryResourcePowerType = self.PrimaryBar.powerType
-	-- 		if customSecondaryResource ~= primaryResourcePowerType then
-	-- 			secondaryResource = SCMConstants.DruidSecondaryResourceByPowerType[customSecondaryResource]
-	-- 			forceMana = secondaryResource and customSecondaryResource == Enum.PowerType.Mana
-	-- 		else
-	-- 			secondaryResource = nil
-	-- 		end
-	-- 	end
-	-- end
+	local forceMana = false
+	if UnitClassBase("player") == "DRUID" and SCM.resourceBarConfig.active then
+		local shapeshiftFormID = GetShapeshiftFormID()
+		local customSecondaryResource
+		local druidFormPowerTypes = GetDruidFormPowerTypes(self.secondaryBarOptions)
 
-	if secondaryResource and secondaryResource.powerType == Enum.PowerType.Mana and ShouldHideManaForCurrentRole(self.secondaryBarOptions) then
+		if not shapeshiftFormID then
+			customSecondaryResource = druidFormPowerTypes and druidFormPowerTypes[0]
+		elseif shapeshiftFormID == DRUID_BEAR_FORM then
+			customSecondaryResource = druidFormPowerTypes and druidFormPowerTypes[1]
+		elseif shapeshiftFormID == DRUID_CAT_FORM then
+			customSecondaryResource = druidFormPowerTypes and druidFormPowerTypes[2]
+		elseif shapeshiftFormID == DRUID_TRAVEL_FORM or shapeshiftFormID == DRUID_FLIGHT_FORM or shapeshiftFormID == DRUID_AQUATIC_FORM then
+			customSecondaryResource = druidFormPowerTypes and druidFormPowerTypes[3]
+		elseif shapeshiftFormID >= DRUID_MOONKIN_FORM_1 and shapeshiftFormID <= DRUID_MOONKIN_FORM_2 then
+			customSecondaryResource = druidFormPowerTypes and druidFormPowerTypes[4]
+		end
+
+		if customSecondaryResource == "none" then
+			secondaryResource = nil
+		else
+			local primaryResourcePowerType = self.PrimaryBar.powerType
+			if customSecondaryResource ~= primaryResourcePowerType then
+				secondaryResource = SCMConstants.DruidSecondaryResourceByPowerType[customSecondaryResource]
+				forceMana = secondaryResource and customSecondaryResource == Enum.PowerType.Mana
+			else
+				secondaryResource = nil
+			end
+		end
+	end
+
+	if secondaryResource and secondaryResource.powerType == Enum.PowerType.Mana and ShouldHideManaForCurrentRole(self.secondaryBarOptions) and not forceMana then
 		secondaryResource = nil
 	end
 
@@ -1235,12 +1235,7 @@ function SCMResourceBarControllerMixin:RefreshBarDisplay(bar, refreshTicks, skip
 		return
 	end
 
-	local currentValue, maxValue, displayValue, resourceSegmentValues = GetCurrentPowerValue(
-		bar.resourceKind,
-		bar.powerType,
-		bar.spellID,
-		bar.segmentCount
-	)
+	local currentValue, maxValue, displayValue, resourceSegmentValues = GetCurrentPowerValue(bar.resourceKind, bar.powerType, bar.spellID, bar.segmentCount)
 	local missingValues = maxValue == nil
 	if bar.resourceKind ~= "spellCharges" then
 		missingValues = missingValues or currentValue == nil
@@ -1445,7 +1440,7 @@ end
 
 function SCM:InitializeResourceBars()
 	local container = _G[RESOURCE_BAR_FRAME_NAME]
-	local barOptions = self.db.profile.options.resourceBar
+	local barOptions = self.resourceBarConfig
 	if not container or container.SCMResourceBarInitialized or not barOptions.enabled then
 		return
 	end

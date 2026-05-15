@@ -74,6 +74,70 @@ local function NormalizeTrackedBarSpellConfig(spellConfig)
 	end
 end
 
+local function CreateResourceBarConfig(resourceBarConfig, specResourceBarConfig, isActive, setSpecConfig)
+	resourceBarConfig = resourceBarConfig or {}
+	setSpecConfig = setSpecConfig or nop
+
+	isActive = isActive or function()
+		return specResourceBarConfig and specResourceBarConfig.active
+	end
+
+	local function SaveSpecConfig()
+		specResourceBarConfig = specResourceBarConfig or {}
+		setSpecConfig(specResourceBarConfig)
+		setSpecConfig = nop
+		return specResourceBarConfig
+	end
+
+	local function CreateChildConfig(key)
+		local function SaveChildConfig(childConfig)
+			SaveSpecConfig()[key] = childConfig
+		end
+
+		return CreateResourceBarConfig(resourceBarConfig[key], specResourceBarConfig and specResourceBarConfig[key], isActive, SaveChildConfig)
+	end
+
+	local metatable = {
+		__index = function(_, key)
+			if key == "active" then
+				return isActive()
+			end
+
+			if not isActive() then
+				return resourceBarConfig[key]
+			end
+
+			local value = specResourceBarConfig and specResourceBarConfig[key]
+			if value == nil then
+				value = resourceBarConfig[key]
+			end
+
+			if type(value) == "table" then
+				return CreateChildConfig(key)
+			end
+
+			return value
+		end,
+		__newindex = function(_, key, value)
+			if key == "active" then
+				SaveSpecConfig()[key] = value
+			elseif isActive() then
+				if IsShiftKeyDown() then
+					if specResourceBarConfig then
+						specResourceBarConfig[key] = nil
+					end
+				else
+					SaveSpecConfig()[key] = value
+				end
+			else
+				resourceBarConfig[key] = value
+			end
+		end,
+	}
+
+	return setmetatable({}, metatable)
+end
+
 function SCM:UpdateDB()
 	local options = self.db.profile.options
 	if not options.cooldownBreakpoints or #options.cooldownBreakpoints == 0 then
@@ -91,6 +155,7 @@ function SCM:UpdateDB()
 	local specBuffBarsAnchorConfig = currentConfig and currentConfig.buffBarsAnchorConfig and currentConfig.buffBarsAnchorConfig[specID]
 	local specSpellConfig = currentConfig and currentConfig.spellConfig[specID]
 	local specCustomConfig = currentConfig and currentConfig.customConfig and currentConfig.customConfig[specID]
+	local specResourceBarConfig = currentConfig and currentConfig.resourceBarConfig and currentConfig.resourceBarConfig[specID]
 
 	self.db.profile[class] = self.db.profile[class] or {}
 	self.db.profile[class][specID] = self.db.profile[class][specID]
@@ -99,6 +164,7 @@ function SCM:UpdateDB()
 			buffBarsAnchorConfig = CopyTable(specBuffBarsAnchorConfig or self.DB.defaultBuffBarsAnchorConfig),
 			spellConfig = specSpellConfig or {},
 			customConfig = specCustomConfig or {},
+			resourceBarConfig = specResourceBarConfig or {},
 		}
 
 	self.currentConfig = self.db.profile[class][specID]
@@ -110,6 +176,10 @@ function SCM:UpdateDB()
 
 	self.currentConfig.customConfig = self.currentConfig.customConfig or {}
 	self.customConfig = CreateCustomConfigTables(self.currentConfig.customConfig)
+
+	self.currentConfig.resourceBarConfig = self.currentConfig.resourceBarConfig or {}
+	self.specResourceBarConfig = self.currentConfig.resourceBarConfig
+	self.resourceBarConfig = CreateResourceBarConfig(options.resourceBar, self.currentConfig.resourceBarConfig)
 
 	self.currentConfig.buffBarsAnchorConfig = self.currentConfig.buffBarsAnchorConfig or {}
 	self.buffBarsAnchorConfig = CreateAnchorConfigTables(self.currentConfig.buffBarsAnchorConfig)

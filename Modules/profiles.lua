@@ -179,6 +179,7 @@ local function MergeConfig(destDB, sourceData, defaultAnchor)
 	destDB.spellConfig = sourceData.spellConfig
 	destDB.itemConfig = sourceData.itemConfig
 	destDB.customConfig = sourceData.customConfig or {}
+	destDB.resourceBarConfig = type(sourceData.resourceBarConfig) == "table" and sourceData.resourceBarConfig or {}
 	destDB.buffBarsAnchorConfig = type(sourceData.buffBarsAnchorConfig) == "table" and sourceData.buffBarsAnchorConfig or {}
 
 	if type(sourceData.anchorConfig) == "table" and #sourceData.anchorConfig > 0 then

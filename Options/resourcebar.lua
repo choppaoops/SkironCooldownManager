@@ -309,6 +309,8 @@ local function AddSpecialColorSettings(parent, settings)
 end
 
 local function AddBarSettings(parent, title, settings, includeManaRoleSettings, globalSettings)
+	local isSpecConfigActive = SCM.resourceBarConfig.active
+
 	local generalSettings = AceGUI:Create("InlineGroup")
 	generalSettings:SetLayout("flow")
 	generalSettings:SetTitle("General")
@@ -377,21 +379,52 @@ local function AddBarSettings(parent, title, settings, includeManaRoleSettings, 
 	end)
 	generalSettings:AddChild(widthSlider)
 
-	local hideManaRoles = AceGUI:Create("Dropdown")
-	hideManaRoles:SetRelativeWidth(0.5)
-	hideManaRoles:SetLabel("Hide Mana For Roles")
-	hideManaRoles:SetList(SCM.Constants.Roles)
-	hideManaRoles:SetMultiselect(true)
-	hideManaRoles:SetCallback("OnValueChanged", function(_, _, key, value)
-		settings.hideManaRoles = settings.hideManaRoles or {}
-		settings.hideManaRoles[key] = value
-		RefreshResourceBars()
-	end)
-	settings.hideManaRoles = settings.hideManaRoles or {}
-	for key, value in pairs(settings.hideManaRoles) do
-		hideManaRoles:SetItemValue(key, value)
+	if not isSpecConfigActive then
+		local hideManaRoleSettings = settings.hideManaRoles
+		local hideManaRoles = AceGUI:Create("Dropdown")
+		hideManaRoles:SetRelativeWidth(0.5)
+		hideManaRoles:SetLabel("Hide Mana For Roles")
+		hideManaRoles:SetList(SCM.Constants.Roles)
+		hideManaRoles:SetMultiselect(true)
+		hideManaRoles:SetCallback("OnValueChanged", function(_, _, key, value)
+			settings.hideManaRoles[key] = value
+			RefreshResourceBars()
+		end)
+		for key in pairs(SCM.Constants.Roles) do
+			hideManaRoles:SetItemValue(key, hideManaRoleSettings[key])
+		end
+		generalSettings:AddChild(hideManaRoles)
+	elseif UnitClassBase("player") == "DRUID" then
+		local powerTypeList = title == "Primary" and Constants.DruidPrimaryPowerTypes or Constants.DruidSecondaryPowerTypes
+		local druidFormPowerTypesBySpec = settings.druidFormPowerTypes
+
+		local druidSettings = AceGUI:Create("InlineGroup")
+		druidSettings:SetFullWidth(true)
+		druidSettings:SetTitle("Druid")
+		druidSettings:SetLayout("flow")
+		parent:AddChild(druidSettings)
+
+		local specID = SCM.currentSpecID
+		local druidFormPowerTypes = druidFormPowerTypesBySpec[specID]
+		local function AddDruidFormDropdown(parentGroup, druidFormPowerTypes, formID, label)
+			local formDropdown = AceGUI:Create("Dropdown")
+			formDropdown:SetRelativeWidth(0.33)
+			formDropdown:SetLabel(label)
+			formDropdown:SetList(powerTypeList)
+			formDropdown:SetValue(druidFormPowerTypes[formID])
+			formDropdown:SetCallback("OnValueChanged", function(_, _, value)
+				druidFormPowerTypes[formID] = value
+				RefreshResourceBars()
+			end)
+			parentGroup:AddChild(formDropdown)
+		end
+
+		AddDruidFormDropdown(druidSettings, druidFormPowerTypes, 0, "Human Form")
+		AddDruidFormDropdown(druidSettings, druidFormPowerTypes, 1, "Bear Form")
+		AddDruidFormDropdown(druidSettings, druidFormPowerTypes, 2, "Cat Form")
+		AddDruidFormDropdown(druidSettings, druidFormPowerTypes, 3, "Travel Form")
+		AddDruidFormDropdown(druidSettings, druidFormPowerTypes, 4, "Moonkin Form")
 	end
-	generalSettings:AddChild(hideManaRoles)
 
 	local barSettings = AceGUI:Create("InlineGroup")
 	barSettings:SetLayout("flow")
@@ -592,61 +625,7 @@ local function AddBarSettings(parent, title, settings, includeManaRoleSettings, 
 	end)
 	textSettings:AddChild(valueYOffset)
 
-	if title == "Primary" then
-		-- local druidFormPowerTypesBySpec = settings.druidFormPowerTypes
-		-- local specList = {}
-		-- local specOrder = {}
-		-- local selectedSpecID = druidFormPowerTypesBySpec[SCM.currentSpecID] and SCM.currentSpecID
-		--
-		-- for specID, formPowerTypes in pairs(druidFormPowerTypesBySpec) do
-		-- 	local _, specName, _, icon = GetSpecializationInfoByID(specID)
-		-- 	specList[specID] = specName and (icon and ("|T%s:14:14:0:0|t %s"):format(icon, specName) or specName) or tostring(specID)
-		-- 	specOrder[#specOrder + 1] = specID
-		-- end
-		--
-		-- table.sort(specOrder)
-		-- selectedSpecID = selectedSpecID or specOrder[1]
-		--
-		-- local function AddDruidFormDropdown(parentGroup, druidFormPowerTypes, formID, label)
-		-- 	local formDropdown = AceGUI:Create("Dropdown")
-		-- 	formDropdown:SetRelativeWidth(0.33)
-		-- 	formDropdown:SetLabel(label)
-		-- 	formDropdown:SetList(Constants.DruidPrimaryPowerTypes)
-		-- 	formDropdown:SetValue(druidFormPowerTypes[formID])
-		-- 	formDropdown:SetCallback("OnValueChanged", function(_, _, value)
-		-- 		druidFormPowerTypes[formID] = value
-		-- 		RefreshResourceBars()
-		-- 	end)
-		-- 	parentGroup:AddChild(formDropdown)
-		-- end
-		--
-		-- local druidFormSettings = AceGUI:Create("DropdownGroup")
-		-- druidFormSettings:SetLayout("flow")
-		-- druidFormSettings:SetTitle("Druid Forms")
-		-- druidFormSettings:SetFullWidth(true)
-		-- druidFormSettings:SetGroupList(specList, specOrder)
-		-- druidFormSettings:SetCallback("OnGroupSelected", function(widget, _, specID)
-		-- 	widget:ReleaseChildren()
-		--
-		-- 	local druidFormPowerTypes = druidFormPowerTypesBySpec[specID]
-		-- 	if not druidFormPowerTypes then
-		-- 		return
-		-- 	end
-		--
-		-- 	AddDruidFormDropdown(widget, druidFormPowerTypes, 0, "Human Form")
-		-- 	AddDruidFormDropdown(widget, druidFormPowerTypes, 1, "Bear Form")
-		-- 	AddDruidFormDropdown(widget, druidFormPowerTypes, 2, "Cat Form")
-		-- 	AddDruidFormDropdown(widget, druidFormPowerTypes, 3, "Travel Form")
-		-- 	AddDruidFormDropdown(widget, druidFormPowerTypes, 4, "Moonkin Form")
-		-- end)
-		-- parent:AddChild(druidFormSettings)
-		--
-		-- if selectedSpecID then
-		-- 	druidFormSettings:SetGroup(selectedSpecID)
-		-- end
-
-		parent:DoLayout()
-	elseif title == "Secondary" then
+	if title == "Secondary" then
 		local miscSettings = AceGUI:Create("InlineGroup")
 		miscSettings:SetLayout("flow")
 		miscSettings:SetTitle("Miscellaneous")
@@ -672,61 +651,9 @@ local function AddBarSettings(parent, title, settings, includeManaRoleSettings, 
 			RefreshResourceBars()
 		end)
 		miscSettings:AddChild(staggerDisplayAsPercent)
-
-		-- local druidFormPowerTypesBySpec = settings.druidFormPowerTypes
-		-- local specList = {}
-		-- local specOrder = {}
-		-- local selectedSpecID = druidFormPowerTypesBySpec[SCM.currentSpecID] and SCM.currentSpecID
-		--
-		-- for specID, formPowerTypes in pairs(druidFormPowerTypesBySpec) do
-		-- 	local _, specName, _, icon = GetSpecializationInfoByID(specID)
-		-- 	specList[specID] = specName and (icon and ("|T%s:14:14:0:0|t %s"):format(icon, specName) or specName) or tostring(specID)
-		-- 	specOrder[#specOrder + 1] = specID
-		-- end
-		--
-		-- table.sort(specOrder)
-		-- selectedSpecID = selectedSpecID or specOrder[1]
-		--
-		-- local function AddDruidFormDropdown(parentGroup, druidFormPowerTypes, formID, label)
-		-- 	local formDropdown = AceGUI:Create("Dropdown")
-		-- 	formDropdown:SetRelativeWidth(0.33)
-		-- 	formDropdown:SetLabel(label)
-		-- 	formDropdown:SetList(Constants.DruidSecondaryPowerTypes)
-		-- 	formDropdown:SetValue(druidFormPowerTypes[formID])
-		-- 	formDropdown:SetCallback("OnValueChanged", function(_, _, value)
-		-- 		druidFormPowerTypes[formID] = value
-		-- 		RefreshResourceBars()
-		-- 	end)
-		-- 	parentGroup:AddChild(formDropdown)
-		-- end
-		--
-		-- local druidFormSettings = AceGUI:Create("DropdownGroup")
-		-- druidFormSettings:SetLayout("flow")
-		-- druidFormSettings:SetTitle("Druid Forms")
-		-- druidFormSettings:SetFullWidth(true)
-		-- druidFormSettings:SetGroupList(specList, specOrder)
-		-- druidFormSettings:SetCallback("OnGroupSelected", function(widget, _, specID)
-		-- 	widget:ReleaseChildren()
-		--
-		-- 	local druidFormPowerTypes = druidFormPowerTypesBySpec[specID]
-		-- 	if not druidFormPowerTypes then
-		-- 		return
-		-- 	end
-		--
-		-- 	AddDruidFormDropdown(widget, druidFormPowerTypes, 0, "Human Form")
-		-- 	AddDruidFormDropdown(widget, druidFormPowerTypes, 1, "Bear Form")
-		-- 	AddDruidFormDropdown(widget, druidFormPowerTypes, 2, "Cat Form")
-		-- 	AddDruidFormDropdown(widget, druidFormPowerTypes, 3, "Travel Form")
-		-- 	AddDruidFormDropdown(widget, druidFormPowerTypes, 4, "Moonkin Form")
-		-- end)
-		-- parent:AddChild(druidFormSettings)
-		--
-		-- if selectedSpecID then
-		-- 	druidFormSettings:SetGroup(selectedSpecID)
-		-- end
-
-		parent:DoLayout()
 	end
+
+	parent:DoLayout()
 end
 
 local function SelectResourceBarTab(tabGroup, group, settings)
@@ -749,8 +676,6 @@ local function SelectResourceBarTab(tabGroup, group, settings)
 end
 
 local function ResourceBar(self)
-	local settings = SCM.db.profile.options.resourceBar
-
 	local resourceBarFrame = AceGUI:Create("InlineGroup")
 	resourceBarFrame:SetLayout("flow")
 	resourceBarFrame:SetFullWidth(true)
@@ -766,16 +691,82 @@ local function ResourceBar(self)
 	label:SetFontObject("Game12Font")
 	resourceBarFrame:AddChild(label)
 
+	local statusGroup = AceGUI:Create("InlineGroup")
+	statusGroup:SetFullWidth(true)
+	statusGroup:SetLayout("flow")
+	resourceBarFrame:AddChild(statusGroup)
+
+	local currentStatus = AceGUI:Create("Label")
+	currentStatus:SetRelativeWidth(0.33)
+	currentStatus:SetJustifyH("LEFT")
+	currentStatus:SetJustifyV("MIDDLE")
+	currentStatus:SetFontObject("Game15Font")
+	statusGroup:AddChild(currentStatus)
+
+	if SCM.resourceBarConfig.active then
+		currentStatus:SetText(string.format("Status: |cffea00ffSpecialization|r (%s)", (select(2, SCM.Utils.GetSpec()))))
+	else
+		currentStatus:SetText("Status: |cfffcf803Profile|r")
+	end
+
+	local modifyCurrentSpecialization = AceGUI:Create("CheckBox")
+	modifyCurrentSpecialization:SetRelativeWidth(0.33)
+	modifyCurrentSpecialization:SetLabel("Use Specialization Config")
+	modifyCurrentSpecialization:SetValue(SCM.resourceBarConfig.active)
+	statusGroup:AddChild(modifyCurrentSpecialization)
+
+	local resetCurrentSpecialization = AceGUI:Create("Button")
+	resetCurrentSpecialization:SetText("Clear Spec Config")
+	resetCurrentSpecialization:SetRelativeWidth(0.33)
+	resetCurrentSpecialization:SetDisabled(not SCM.resourceBarConfig.active)
+	resetCurrentSpecialization:SetCallback("OnEnter", function()
+		GameTooltip:SetOwner(self.frame, "ANCHOR_CURSOR")
+		GameTooltip:SetText("Clear Spec Config", nil, nil, nil, nil, true)
+		GameTooltip:AddLine("This will clear the spec config and fall back to the normal resource bar options.", 1, 1, 1, true)
+		GameTooltip:Show()
+	end)
+	resetCurrentSpecialization:SetCallback("OnLeave", function()
+		GameTooltip:Hide()
+	end)
+	statusGroup:AddChild(resetCurrentSpecialization)
+
+	local currentTab = "Layout"
 	local resourceBarTabs = AceGUI:Create("TabGroup")
 	resourceBarTabs:SetTabs(RESOURCE_BAR_TABS)
 	resourceBarTabs:SetFullWidth(true)
 	resourceBarTabs:SetFullHeight(true)
 	resourceBarTabs:SetLayout("fill")
 	resourceBarTabs:SetCallback("OnGroupSelected", function(widget, _, group)
-		SelectResourceBarTab(widget, group, settings)
+		currentTab = group
+		SelectResourceBarTab(widget, group, SCM.resourceBarConfig)
 	end)
 	resourceBarTabs:SelectTab("Layout")
 	resourceBarFrame:AddChild(resourceBarTabs)
+
+	resetCurrentSpecialization:SetCallback("OnClick", function()
+		local specResourceBarConfig = SCM.specResourceBarConfig
+		local isActive = specResourceBarConfig.active
+
+		wipe(specResourceBarConfig)
+		specResourceBarConfig.active = isActive
+
+		resourceBarTabs:SelectTab(currentTab)
+		RefreshResourceBars()
+	end)
+
+	modifyCurrentSpecialization:SetCallback("OnValueChanged", function(_, _, value)
+		SCM.resourceBarConfig.active = value
+
+		if value then
+			currentStatus:SetText(string.format("Status: |cffea00ffSpecialization|r (%s)", (select(2, SCM.Utils.GetSpec()))))
+		else
+			currentStatus:SetText("Status: |cfffcf803Profile|r")
+		end
+
+		resourceBarTabs:SelectTab(currentTab)
+		resetCurrentSpecialization:SetDisabled(not value)
+		RefreshResourceBars()
+	end)
 end
 
 SCM.MainTabs.ResourceBar.callback = ResourceBar
