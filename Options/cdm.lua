@@ -1335,7 +1335,7 @@ local function SelectAnchor(widget, parentWidget, anchorIndex, anchorTabsTbl, mo
 									alwaysShow:SetRelativeWidth(0.5)
 									alwaysShow:SetValue(buttonConfig.alwaysShow)
 									alwaysShow:SetDisabled(not options.hideBuffsWhenInactive or buttonConfig.showWhileInactive)
-									SCM.Utils.SetDisabledTooltip(alwaysShow, "Enable 'Hide Inactive Auras' in Global Settings > General > Auras first or disable 'Show While Inactive'.")
+									SCM.Utils.SetDisabledTooltip(alwaysShow, "Enable \"Disable 'Hide Inactive Auras'\" in Global Settings > General > Auras first or disable 'Show While Inactive'.")
 									iconSettingsTabs:AddChild(alwaysShow)
 									alwaysShow:SetCallback("OnValueChanged", function(self, event, value)
 										buttonConfig.alwaysShow = value
@@ -1357,7 +1357,7 @@ local function SelectAnchor(widget, parentWidget, anchorIndex, anchorTabsTbl, mo
 									showWhileInactive:SetRelativeWidth(0.5)
 									showWhileInactive:SetValue(buttonConfig.showWhileInactive)
 									showWhileInactive:SetDisabled(not options.hideBuffsWhenInactive or buttonConfig.alwaysShow)
-									SCM.Utils.SetDisabledTooltip(showWhileInactive, "Enable 'Hide Inactive Auras' in Global Settings > General > Auras first or disable 'Show Always'.")
+									SCM.Utils.SetDisabledTooltip(showWhileInactive, "Enable \"Disable 'Hide Inactive Auras'\" in Global Settings > General > Auras first or disable 'Show Always'.")
 									iconSettingsTabs:AddChild(showWhileInactive)
 									showWhileInactive:SetCallback("OnValueChanged", function(self, event, value)
 										buttonConfig.showWhileInactive = value
