@@ -18,11 +18,13 @@ SCM.Templates = {}
 
 local function OnEssentialCooldownViewerLayout(viewer)
 	SCM:InvalidateViewerChildrenCache(viewer)
+	SCM:InvalidateViewerChildrenCache(UtilityCooldownViewer)
 	SCM:ApplyEssentialCDManagerConfig()
 end
 
 local function OnUtilityCooldownViewerLayout(viewer)
 	SCM:InvalidateViewerChildrenCache(viewer)
+	SCM:InvalidateViewerChildrenCache(EssentialCooldownViewer)
 	SCM:ApplyUtilityCDManagerConfig()
 end
 
@@ -164,7 +166,9 @@ local function OnSpellCooldownUpdateThrottleTick()
 end
 
 function SCM:SPELL_UPDATE_COOLDOWN(spellID)
-	if not spellID then return end
+	if not spellID then
+		return
+	end
 
 	if isSpellCooldownUpdateThrottled then
 		pendingSpellCooldownIDs[spellID] = true
