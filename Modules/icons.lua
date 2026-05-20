@@ -353,8 +353,10 @@ local function ProcessSingleChild(child, validChildren, categoryIndex, isBuffIco
 	if activeScopedAnchorGroups and (oldCooldownID ~= cooldownID or oldGroup ~= group) then
 		if oldGroup then
 			activeScopedAnchorGroups[oldGroup] = true
+			Cache.cachedAnchorStates[oldGroup].layoutSignature = nil
 		end
 		activeScopedAnchorGroups[group] = true
+		Cache.cachedAnchorStates[group].layoutSignature = nil
 	end
 
 	AddChildToGroup(validChildren, group, child)
