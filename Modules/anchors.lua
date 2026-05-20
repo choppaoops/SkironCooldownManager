@@ -156,25 +156,46 @@ function SCM:UpdateUUFValues(options, maxGroupWidth, rowConfig)
 		end
 	end
 
-	if ElvUI and not next(OriginalElvUIAnchors) and options.anchorElvUI then
+	if ElvUI then
 		local E = ElvUI[1]
-		if E.db.movers then
-			OriginalElvUIAnchors["ElvUF_PlayerMover"] = OriginalElvUIAnchors["ElvUF_PlayerMover"] or E.db.movers.ElvUF_PlayerMover
-			E.db.movers.ElvUF_PlayerMover = string.format("TOPRIGHT,%s,TOPLEFT,%d,%d", mainAnchor:GetName(), -offset - options.temporaryPadding, 0)
-			E:SetMoverPoints("ElvUF_PlayerMover")
+		if options.anchorElvUI then
+			if E.db.movers then
+				SCM.db.profile.options.elvUIAnchors["ElvUF_PlayerMover"] = SCM.db.profile.options.elvUIAnchors["ElvUF_PlayerMover"] or E.db.movers.ElvUF_PlayerMover
+				E.db.movers.ElvUF_PlayerMover = string.format("TOPRIGHT,%s,TOPLEFT,%d,%d", mainAnchor:GetName(), -offset - options.temporaryPadding, 0)
+				E:SetMoverPoints("ElvUF_PlayerMover")
 
-			OriginalElvUIAnchors["ElvUF_TargetMover"] = OriginalElvUIAnchors["ElvUF_TargetMover"] or E.db.movers.ElvUF_TargetMover
-			E.db.movers.ElvUF_TargetMover = string.format("TOPLEFT,%s,TOPRIGHT,%d,%d", mainAnchor:GetName(), offset + options.temporaryPadding, 0)
-			E:SetMoverPoints("ElvUF_TargetMover")
+				SCM.db.profile.options.elvUIAnchors["ElvUF_TargetMover"] = SCM.db.profile.options.elvUIAnchors["ElvUF_TargetMover"] or E.db.movers.ElvUF_TargetMover
+				E.db.movers.ElvUF_TargetMover = string.format("TOPLEFT,%s,TOPRIGHT,%d,%d", mainAnchor:GetName(), offset + options.temporaryPadding, 0)
+				E:SetMoverPoints("ElvUF_TargetMover")
+			end
+
+			if options.adjustHeight then
+				E.db.unitframe.units.player.height = rowConfig[1].size
+				E.db.unitframe.units.target.height = rowConfig[1].size
+			end
+
+			local UF = E:GetModule("UnitFrames")
+			UF:Update_AllFrames()
+		else
+			local changed = false
+			if SCM.db.profile.options.elvUIAnchors["ElvUF_PlayerMover"] then
+				changed = true
+				E.db.movers.ElvUF_PlayerMover = SCM.db.profile.options.elvUIAnchors["ElvUF_PlayerMover"]
+				E:SetMoverPoints("ElvUF_PlayerMover")
+			end
+
+			if SCM.db.profile.options.elvUIAnchors["ElvUF_TargetMover"] then
+				changed = true
+				E.db.movers.ElvUF_TargetMover = SCM.db.profile.options.elvUIAnchors["ElvUF_TargetMover"]
+				E:SetMoverPoints("ElvUF_TargetMover")
+			end
+
+			if changed then
+				local UF = E:GetModule("UnitFrames")
+				UF:Update_AllFrames()
+				wipe(SCM.db.profile.options.elvUIAnchors)
+			end
 		end
-
-		if options.adjustHeight then
-			E.db.unitframe.units.player.height = rowConfig[1].size
-			E.db.unitframe.units.target.height = rowConfig[1].size
-		end
-
-		local UF = E:GetModule("UnitFrames")
-		UF:Update_AllFrames()
 	end
 end
 
