@@ -280,6 +280,8 @@ end
 
 function SCM:SkinBuffBar(child, config)
 	local options = SCM.db.profile.options
+	config = config or child.SCMConfig
+
 	local frameStrata = child.SCMAnchorFrameStrata or options.iconFrameStrata
 	if frameStrata and frameStrata ~= "" then
 		child:SetFrameStrata(frameStrata)
@@ -290,6 +292,11 @@ function SCM:SkinBuffBar(child, config)
 	local borderColor = buffBarOptions.borderColor
 	local backgroundColor = buffBarOptions.backgroundColor
 	local foregroundColor = buffBarOptions.foregroundColor
+
+	if config and config.customColor then
+		foregroundColor = config.customColor
+	end
+
 	local iconFrame, bar
 
 	if child.GetIconFrame then
