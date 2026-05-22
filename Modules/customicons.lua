@@ -465,7 +465,7 @@ local function DoesItemOrSpellExists(config)
 			return true
 		elseif config.slotID then
 			local itemID = GetInventoryItemID("player", config.slotID)
-			if itemID then
+			if itemID and (not config.filterItems or not config.filterItems[itemID]) then
 				return C_Item.DoesItemExistByID(itemID) and C_Item.GetItemSpell(itemID)
 			end
 		end
