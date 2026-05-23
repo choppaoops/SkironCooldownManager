@@ -361,6 +361,11 @@ function SCM:GetHideWhenInactive()
 	return LibEditModeOverride:GetFrameSetting(BuffIconCooldownViewer, Enum.EditModeCooldownViewerSetting.HideWhenInactive)
 end
 
+function SCM:GetShowTooltip()
+	LibEditModeOverride:LoadLayouts()
+	return LibEditModeOverride:GetFrameSetting(BuffIconCooldownViewer, Enum.EditModeCooldownViewerSetting.ShowTooltips)
+end
+
 function SCM:SetHideWhenInactive(value)
 	LibEditModeOverride:LoadLayouts()
 
@@ -450,7 +455,9 @@ local function OpenOptions()
 	SCM.OptionsFrame = frame
 	LibWindow.RegisterConfig(frame.frame, options.optionsWindow)
 	LibWindow.SetScale(frame.frame, options.menuScale)
-	frame.frame.TitleContainer:HookScript("OnMouseUp", function() LibWindow.SavePosition(frame.frame) end)
+	frame.frame.TitleContainer:HookScript("OnMouseUp", function()
+		LibWindow.SavePosition(frame.frame)
+	end)
 
 	if options.savePosition then
 		LibWindow.RestorePosition(frame.frame)

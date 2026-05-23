@@ -21,7 +21,7 @@ local function ApplyHideChildNow(child)
 	child.SCMHidden = true
 	UIParent.SetAlpha(child, 0)
 	child:EnableMouse(false)
-	child.SCMOnEnter = child:GetScript("OnEnter")
+	child.SCMOnEnter = child.SCMOnEnter or child:GetScript("OnEnter")
 	child:SetScript("OnEnter", nil)
 
 	if not child.SCMAlphaHook then
@@ -74,7 +74,10 @@ function Icons.ShowChild(child)
 		child.SCMHidden = false
 		UIParent.SetAlpha(child, 1)
 		child:EnableMouse(true)
-		child:SetScript("OnEnter", child.SCMOnEnter)
+
+		if SCM.showTooltips then
+			child:SetScript("OnEnter", child.SCMOnEnter)
+		end
 	end
 end
 

@@ -50,6 +50,8 @@ local function ResetCustomIconFrame(_, frame)
 	frame.isOnCooldown = nil
 	frame.isOnGCD = nil
 	frame.spellOutOfRange = nil
+	frame.SCMCooldownStartTime = nil
+	frame.SCMCooldownDuration = nil
 
 	frame:EnableMouse(false)
 	frame:SetAlpha(1)
@@ -378,14 +380,14 @@ local function UpdateCustomIconCooldown(frame, iconType, config)
 		local startTime, duration, _, modRate = C_Item.GetItemCooldown(itemID)
 
 		if duration > 0 and (startTime + duration) - GetTime() >= 0 then
-			if not frame.isOnCooldown then
+			if not frame.isOnCooldown or frame.SCMCooldownStartTime ~= startTime or frame.SCMCooldownDuration ~= duration then
 				if modRate then
 					frame.Cooldown:SetCooldown(startTime, duration, modRate)
 				else
 					frame.Cooldown:SetCooldown(startTime, duration)
 				end
 
-				if itemID == 5512 and duration < 0.1 then
+				if duration < 0.1 then
 					frame.Icon:SetVertexColor(CooldownViewerConstants.ITEM_NOT_USABLE_COLOR:GetRGBA())
 					frame.Icon:SetDesaturated(false)
 				else
@@ -393,6 +395,8 @@ local function UpdateCustomIconCooldown(frame, iconType, config)
 					frame.Icon:SetDesaturated(true)
 				end
 				frame.isOnCooldown = true
+				frame.SCMCooldownStartTime = startTime
+				frame.SCMCooldownDuration = duration
 				UpdateCustomIconGCD(frame, config, true)
 				UpdateCustomIconGlow(frame, false)
 			end
@@ -400,8 +404,11 @@ local function UpdateCustomIconCooldown(frame, iconType, config)
 			return true
 		elseif duration == 0 and frame.isOnCooldown then
 			frame.isOnCooldown = false
+			frame.SCMCooldownStartTime = nil
+			frame.SCMCooldownDuration = nil
 			frame.Cooldown:Clear()
-			frame.Icon:SetVertexColor(0.4, 0.4, 0.4)
+			frame.Icon:SetVertexColor(1, 1, 1)
+			frame.Icon:SetDesaturated(false)
 			UpdateCustomIconGCD(frame, config, true)
 			UpdateCustomIconGlow(frame, false)
 		end

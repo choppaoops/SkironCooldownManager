@@ -196,6 +196,7 @@ function SCM:UpdateDB()
 	self:RemoveOldAnchorConfigs(self.currentConfig, self.globalAnchorConfig, self.globalCustomConfig)
 
 	self.isHideWhenInactiveEnabled = self:GetHideWhenInactive() == 1
+	self.showTooltips = self:GetShowTooltip() == 1
 	self.currentClass = class
 	self.currentSpecID = specID
 	self.currentRole = role
