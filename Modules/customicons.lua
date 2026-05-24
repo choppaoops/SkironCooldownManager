@@ -451,8 +451,13 @@ local function UpdateCustomIconCharges(frame, spellID)
 		return
 	end
 
-	frame.ChargeCount.Current:SetText(C_StringUtil.TruncateWhenZero(chargeInfo and C_Spell.GetSpellDisplayCount(spellID) or C_Spell.GetSpellCastCount(spellID)))
-	frame.ChargeCount.Current:Show()
+	local success, charges = pcall(C_StringUtil.TruncateWhenZero, chargeInfo and C_Spell.GetSpellDisplayCount(spellID) or C_Spell.GetSpellCastCount(spellID))
+	if success then
+		frame.ChargeCount.Current:SetText(charges)
+		frame.ChargeCount.Current:Show()
+	else
+		frame.ChargeCount.Current:Hide()
+	end
 end
 
 local function UpdateSpellUsesForEntries(entries)

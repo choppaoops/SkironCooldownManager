@@ -33,7 +33,7 @@ local function ApplyChargeAndApplicationStyle(child, options, fontPath)
 
 		child.ChargeCount.Current.SCMRowConfig = rowConfig
 
-		if child.SCMCooldownID then
+		if child.SCMCooldownID and not child.SCMCustom then
 			local cooldownData = SCM.defaultCooldownViewerConfig.cooldownIDs[child.SCMCooldownID]
 			if rowConfig and cooldownData and cooldownData.charges and not child.SCMChargeCountHook then
 				child.SCMChargeCountHook = true
@@ -463,4 +463,6 @@ end
 
 function SCM:SkinBuffBars()
 	for _, child in ipairs({ BuffBarCooldownViewer:GetChildren() }) do
-		self:Skin
+		self:SkinBuffBar(child)
+	end
+end
