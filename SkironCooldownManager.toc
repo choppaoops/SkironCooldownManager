@@ -19,6 +19,7 @@ Libs\LibCustomGlow-1.0\LibCustomGlow-1.0.xml
 Libs\LibSharedMedia-3.0\lib.xml
 Libs\AceGUI-3.0-SharedMediaWidgets\widget.xml
 Libs\LibEditModeOverride\LibEditModeOverride.xml
+Libs\LibWindow-1.1\LibWindow-1.1.lua
 Libs\TaintLess\TaintLess.xml
 
 Custom-Widgets\AceGUIContainer-SCMFrame.lua
@@ -26,6 +27,7 @@ Custom-Widgets\AceGUIContainer-SCMTabGroup.lua
 Custom-Widgets\AceGUIContainer-SCMScrollFrame.lua
 Custom-Widgets\AceGUIContainer-SCMHorizontalScrollFrame.lua
 
+Database\curves.lua
 Database\constants.lua
 Database\defaults.lua
 Database\sharedmedia.lua

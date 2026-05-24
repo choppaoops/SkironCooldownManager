@@ -76,6 +76,38 @@ local function RemoveOldCustomConfigAnchors(customConfig, anchorConfig)
 	end
 end
 
+function SCM:MigrateLegacyGlobalConfigToProfiles()
+	local globalDB = self.db.global
+	local legacyAnchorConfig = globalDB.globalAnchorConfig
+	local legacyCustomConfig = globalDB.globalCustomConfig
+	if not legacyAnchorConfig and not legacyCustomConfig then
+		return
+	end
+
+	local profiles = self.db.profiles
+	for _, profile in pairs(profiles) do
+		if legacyAnchorConfig and not profile.globalAnchorConfig then
+			profile.globalAnchorConfig = CopyTable(legacyAnchorConfig)
+		end
+
+		if legacyCustomConfig then
+			local profileCustomConfig = profile.globalCustomConfig
+			if profileCustomConfig == nil then
+				profile.globalCustomConfig = CopyTable(legacyCustomConfig)
+			elseif profileCustomConfig == "table" then
+				for key, config in pairs(legacyCustomConfig) do
+					if not profileCustomConfig[key] then
+						profileCustomConfig[key] = CopyTable(config)
+					end
+				end
+			end
+		end
+	end
+
+	globalDB.globalAnchorConfig = nil
+	globalDB.globalCustomConfig = nil
+end
+
 function SCM:RemoveOldAnchorConfigs(currentConfig, globalAnchorConfig, globalCustomConfig)
 	if type(currentConfig) == "table" then
 		RemoveOldSpellConfigAnchorsFromTable(currentConfig.spellConfig, currentConfig.anchorConfig, currentConfig.buffBarsAnchorConfig)

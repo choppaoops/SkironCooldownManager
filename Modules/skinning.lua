@@ -22,11 +22,6 @@ local function ApplyChargeAndApplicationStyle(child, options, fontPath)
 			child.ChargeCount.Current:SetFont(fontPath, size, outline)
 		end
 
-		if child.SCMCustom then
-			--child.ChargeCount:SetWidth(child.ChargeCount.Current:GetWidth())
-			--child.ChargeCount:SetHeight(child.ChargeCount.Current:GetStringHeight() - 10)
-		end
-
 		child.ChargeCount.Current:ClearAllPoints()
 		child.ChargeCount.Current:SetPoint(
 			rowConfig.chargePoint or options.chargePoint,
@@ -35,6 +30,26 @@ local function ApplyChargeAndApplicationStyle(child, options, fontPath)
 			rowConfig.chargeXOffset or options.chargeXOffset,
 			rowConfig.chargeYOffset or options.chargeYOffset
 		)
+
+		child.ChargeCount.Current.SCMRowConfig = rowConfig
+
+		if child.SCMCooldownID then
+			local cooldownData = SCM.defaultCooldownViewerConfig.cooldownIDs[child.SCMCooldownID]
+			if rowConfig and cooldownData and cooldownData.charges and not child.SCMChargeCountHook then
+				child.SCMChargeCountHook = true
+				hooksecurefunc(child.ChargeCount.Current, "SetText", function(self, text)
+					if self.SCMSetText then
+						return
+					end
+
+					if self.SCMRowConfig and self.SCMRowConfig.chargeTruncateWhenZero then
+						self.SCMSetText = true
+						self:SetText(C_StringUtil.TruncateWhenZero(text))
+						self.SCMSetText = nil
+					end
+				end)
+			end
+		end
 	end
 
 	if child.Applications and child.Applications.Applications then
@@ -121,6 +136,8 @@ local function ApplyCooldownStyle(child, options)
 			local parent = self:GetParent()
 			local forceActiveSwipe = parent.SCMConfig and parent.SCMConfig.forceActiveSwipe
 
+			SCM.Cooldowns.ApplyNumericRuleFormatter(self)
+
 			if parent.auraInstanceID or parent.SCMFakeAuraInstanceID or parent.SCMBuffOptions then
 				if options.disableRegularIconActiveSwipe and not forceActiveSwipe then
 					if options.recolorNormalSwipe then
@@ -148,22 +165,37 @@ local function ApplyCooldownStyle(child, options)
 			ApplyCooldownFont(self, options)
 		end)
 
-		-- hooksecurefunc(cooldownFrame, "Clear", function(self)
-		-- 	if options.recolorActiveSwipe then
-		-- 		self:SetSwipeColor(0, 0, 0, 0.7)
-		-- 	end
-		-- end)
-
 		ApplyCooldownFont(cooldownFrame, options)
+	end
+end
+
+local function ApplyZoomSettings(child, options)
+	local iconZoom = SCM:PixelPerfect(options.iconZoom)
+
+	if options.keepIconSquareRatio and child.SCMWidth and child.SCMHeight then
+		local xCrop = 1 - iconZoom
+		local yCrop = 1 - iconZoom
+		local ratio = child.SCMWidth / child.SCMHeight
+
+		if ratio > 1 then
+			yCrop = xCrop / ratio
+		elseif ratio < 1 then
+			xCrop = yCrop * ratio
+		end
+
+		local left = (1 - xCrop) / 2
+		local right = 1 - left
+		local top = (1 - yCrop) / 2
+		local bottom = 1 - top
+
+		child.Icon:SetTexCoord(left, right, top, bottom)
+	else
+		child.Icon:SetTexCoord(iconZoom, 1 - iconZoom, iconZoom, 1 - iconZoom)
 	end
 end
 
 function SCM:SkinChild(child, childConfig)
 	local options = self.db.profile.options
-	local frameStrata = child.SCMAnchorFrameStrata or options.iconFrameStrata
-	if frameStrata and frameStrata ~= "" then
-		child:SetFrameStrata(frameStrata)
-	end
 
 	if C_AddOns.IsAddOnLoaded("ElvUI") and ElvUI[1].private.skins.blizzard.cooldownManager then
 		return
@@ -173,57 +205,48 @@ function SCM:SkinChild(child, childConfig)
 		return
 	end
 
-	local borderSize = SCM:PixelPerfect() * options.borderSize
+	local frameStrata = child.SCMAnchorFrameStrata or options.iconFrameStrata
+	if frameStrata and frameStrata ~= "" then
+		child:SetFrameStrata(frameStrata)
+	end
+
+	local borderSize = options.experimentalPixelSettings and options.borderSize or SCM:PixelPerfect(options.borderSize)
 	local borderColor = options.borderColor
 
-	if child.SCMSkinned and self.OptionsFrame ~= nil and self.OptionsFrame:IsShown() then
-		if borderSize == 0 then
-			child.customBorder:Hide()
-		else
-			child.customBorder:SetBackdrop({
-				edgeFile = "Interface\\Buttons\\WHITE8x8",
-				edgeSize = borderSize,
-			})
-			child.customBorder:Show()
-
-			child.customBorder:SetBackdropBorderColor(borderColor.r, borderColor.g, borderColor.b, borderColor.a)
-		end
-
-		child.Icon:ClearAllPoints()
-		child.Icon:SetPoint("TOPLEFT", child, "TOPLEFT", borderSize, -borderSize)
-		child.Icon:SetPoint("BOTTOMRIGHT", child, "BOTTOMRIGHT", -borderSize, borderSize)
-
-		local iconZoom = options.iconZoom
-		child.Icon:SetTexCoord(iconZoom, 1 - iconZoom, iconZoom, 1 - iconZoom)
-
-		local fontPath = LSM:Fetch("font", options.chargeFont)
-		ApplyChargeAndApplicationStyle(child, options, fontPath)
-		ApplyCooldownStyle(child, options)
-	elseif not child.SCMSkinned then
+	if not child.SCMSkinned or (child.SCMSkinned and self.OptionsFrame ~= nil and self.OptionsFrame:IsShown()) then
 		child.SCMSkinned = true
 
-		child.Icon:ClearAllPoints()
-		child.Icon:SetPoint("TOPLEFT", child, "TOPLEFT", borderSize, -borderSize)
-		child.Icon:SetPoint("BOTTOMRIGHT", child, "BOTTOMRIGHT", -borderSize, borderSize)
 		local iconZoom = options.iconZoom
 		child.Icon:SetTexCoord(iconZoom, 1 - iconZoom, iconZoom, 1 - iconZoom)
 
 		child.Cooldown:ClearAllPoints()
 		child.Cooldown:SetAllPoints(child)
 
-		child.customBorder = CreateFrame("Frame", nil, child, "BackdropTemplate")
+		child.customBorder = child.customBorder or CreateFrame("Frame", nil, child, "BackdropTemplate")
 		child.customBorder:SetFrameLevel(child:GetFrameLevel() + 1)
 		child.customBorder:SetAllPoints(child)
 		child.customBorder:SetBackdrop({
 			edgeFile = "Interface\\Buttons\\WHITE8x8",
 			edgeSize = borderSize,
 		})
-		child.customBorder:SetBackdropBorderColor(0, 0, 0, 1)
+		child.customBorder:SetBackdropBorderColor(borderColor.r, borderColor.g, borderColor.b, borderColor.a)
 
 		if borderSize == 0 then
 			child.customBorder:Hide()
 		else
 			child.customBorder:Show()
+		end
+
+		if options.experimentalPixelSettings then
+			for _, region in ipairs({ child.customBorder:GetRegions() }) do
+				region:SetTexelSnappingBias(0)
+				region:SetSnapToPixelGrid(false)
+			end
+		else
+			for _, region in ipairs({ child.customBorder:GetRegions() }) do
+				region:SetTexelSnappingBias(1)
+				region:SetSnapToPixelGrid(true)
+			end
 		end
 
 		local textureRegion
@@ -250,12 +273,24 @@ function SCM:SkinChild(child, childConfig)
 			end
 		end
 
+		child.Icon:ClearAllPoints()
+		child.Icon:SetPoint("TOPLEFT", child, "TOPLEFT", borderSize, -borderSize)
+		child.Icon:SetPoint("BOTTOMRIGHT", child, "BOTTOMRIGHT", -borderSize, borderSize)
+
+		if options.experimentalPixelSettings then
+			child.Icon:SetTexelSnappingBias(0)
+			child.Icon:SetSnapToPixelGrid(false)
+		else
+			child.Icon:SetTexelSnappingBias(1)
+			child.Icon:SetSnapToPixelGrid(true)
+		end
+
 		if child.DebuffBorder then
 			child.DebuffBorder:SetAlpha(0)
 		end
 
-		local fontPath = LSM:Fetch("font", options.chargeFont)
-		ApplyChargeAndApplicationStyle(child, options, fontPath)
+		ApplyZoomSettings(child, options)
+		ApplyChargeAndApplicationStyle(child, options, LSM:Fetch("font", options.chargeFont))
 		ApplyCooldownStyle(child, options)
 	end
 
@@ -266,6 +301,8 @@ end
 
 function SCM:SkinBuffBar(child, config)
 	local options = SCM.db.profile.options
+	config = config or child.SCMConfig
+
 	local frameStrata = child.SCMAnchorFrameStrata or options.iconFrameStrata
 	if frameStrata and frameStrata ~= "" then
 		child:SetFrameStrata(frameStrata)
@@ -276,6 +313,11 @@ function SCM:SkinBuffBar(child, config)
 	local borderColor = buffBarOptions.borderColor
 	local backgroundColor = buffBarOptions.backgroundColor
 	local foregroundColor = buffBarOptions.foregroundColor
+
+	if config and config.customColor then
+		foregroundColor = config.customColor
+	end
+
 	local iconFrame, bar
 
 	if child.GetIconFrame then
@@ -305,7 +347,12 @@ function SCM:SkinBuffBar(child, config)
 			end
 		end
 
-		bar:SetPoint("TOPLEFT", iconFrame, "TOPRIGHT", -borderSize, 0)
+		if options.buffBarContent == 2 then
+			bar:SetPoint("TOPLEFT", iconFrame, "TOPLEFT", 0, 0)
+		else
+			bar:SetPoint("TOPLEFT", iconFrame, "TOPRIGHT", -borderSize, 0)
+		end
+
 		bar:SetPoint("BOTTOMLEFT", iconFrame, "BOTTOMRIGHT", -borderSize, 0)
 		bar:SetHeight(iconFrame:GetHeight())
 		bar:SetStatusBarColor(foregroundColor.r, foregroundColor.g, foregroundColor.b, foregroundColor.a)

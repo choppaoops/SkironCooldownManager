@@ -3,6 +3,7 @@ local LSM = LibStub("LibSharedMedia-3.0")
 
 local Utils = SCM.Utils
 local RESOURCE_BAR_FRAME_NAME = "SCM_ResourceBarContainer"
+local ANCHOR_PROXY_SIZE_CHANGED_EVENT = "SkironCooldownManager.AnchorProxy.SizeChanged"
 
 local UNIT_POWER_SPELL_IDS = Constants.UnitPowerSpellIDs
 local SPELL_ID_VOID_METAMORPHOSIS = UNIT_POWER_SPELL_IDS.VOID_METAMORPHOSIS_SPELL_ID or 1217607
@@ -36,7 +37,7 @@ local function GetPowerColorByInfo(powerToken, powerType)
 end
 
 local function GetPowerColor(powerToken, powerType, altR, altG, altB)
-	local barOptions = SCM.db.profile.options.resourceBar
+	local barOptions = SCM.resourceBarConfig
 	local colorOverrides = barOptions and barOptions.powerTypeColorOverrides
 	local powerTypeColorOverride = powerToken and colorOverrides and colorOverrides[powerToken]
 
@@ -248,17 +249,16 @@ local function GetTipOfTheSpearValue()
 	return currentValue, maxValue
 end
 
-
 local function GetIciclesValue()
-    local currentValue = 0
-    local maxValue = 5
+	local currentValue = 0
+	local maxValue = 5
 
-    local auraData = C_UnitAuras.GetPlayerAuraBySpellID(SPELL_ID_ICICLES)
-    if auraData then
-        currentValue = auraData.applications or 0
-    end
+	local auraData = C_UnitAuras.GetPlayerAuraBySpellID(SPELL_ID_ICICLES)
+	if auraData then
+		currentValue = auraData.applications or 0
+	end
 
-    return currentValue, maxValue
+	return currentValue, maxValue
 end
 
 local function GetMaelstromWeaponValue()
@@ -334,8 +334,8 @@ local function GetCurrentPowerValue(resourceKind, powerType, spellID, segmentCou
 	end
 
 	if resourceKind == "icicles" then
-        return GetIciclesValue()
-    end
+		return GetIciclesValue()
+	end
 
 	local currentValue = UnitPower("player", powerType)
 	local maxValue = UnitPowerMax("player", powerType)
@@ -343,6 +343,10 @@ local function GetCurrentPowerValue(resourceKind, powerType, spellID, segmentCou
 end
 
 local function UpdateStaggerBarColor(bar, currentValue, maxValue, resourceBarOptions)
+	if issecretvalue(currentValue) or issecretvalue(maxValue) then
+		return
+	end
+
 	local staggerPercent = maxValue > 0 and currentValue / maxValue or 0
 	local staggerColors = resourceBarOptions.staggerColors
 	local color = staggerColors.light
@@ -424,7 +428,7 @@ local function GetSegmentBarSize(bar, segmentCount)
 end
 
 local function UpdateSpellChargeRecharge(bar, chargeInfo)
-	if bar.resourceKind ~= "spellCharges" or not chargeInfo or not chargeInfo.isActive or not bar.spellID then
+	if bar.resourceKind ~= "spellCharges" or not chargeInfo or not chargeInfo.isActive or not bar.spellID or (bar.barOptions and bar.barOptions.textOnly) then
 		HideRechargeSegment(bar)
 		return
 	end
@@ -463,6 +467,52 @@ local function UpdateSpellChargeRecharge(bar, chargeInfo)
 	segment:Show()
 end
 
+local function HideResourceBarSpark(bar)
+	if bar.Spark then
+		bar.Spark:Hide()
+	end
+end
+
+local function ApplyResourceBarSparkOptions(bar, sparkAnchor, optionsChanged)
+	if not optionsChanged or not sparkAnchor then
+		return
+	end
+
+	local spark = bar.Spark
+	local sparkOptions = bar.barOptions and bar.barOptions.spark
+	local color = sparkOptions.color
+	local width = SCM:PixelPerfect(sparkOptions.width)
+	local height = SCM:PixelPerfect(sparkOptions.height)
+	local blendMode = sparkOptions.blendMode
+
+	local texture = sparkOptions.texture
+	local texturePath = "Interface\\Buttons\\WHITE8x8"
+	if type(texture) == "string" and texture ~= "" then
+		if texture:find("\\", 1, true) then
+			texturePath = texture
+		end
+
+		local sharedMediaPath = LSM:Fetch("statusbar", texture)
+		if sharedMediaPath then
+			texturePath = sharedMediaPath
+		end
+	end
+	if bar.SparkFrame then
+		bar.SparkFrame:SetFrameStrata(bar:GetFrameStrata())
+		bar.SparkFrame:SetFrameLevel(bar:GetFrameLevel() + 4)
+	end
+
+	spark:SetSize(width, height)
+	spark:SetBlendMode(blendMode)
+	spark:SetTexture(texturePath)
+	spark:SetVertexColor(color.r, color.g, color.g, color.a)
+	spark:SetAlpha(1)
+	spark:SetSnapToPixelGrid(false)
+	spark:SetTexelSnappingBias(0)
+	spark:ClearAllPoints()
+	PixelUtil.SetPoint(spark, "LEFT", sparkAnchor, "RIGHT", sparkOptions.xOffset, sparkOptions.yOffset)
+end
+
 local function ResetResourceBar(bar)
 	bar.resourceKind = nil
 	bar.powerType = nil
@@ -476,6 +526,7 @@ local function ResetResourceBar(bar)
 	HideRegions(bar.SegmentFillBars)
 	HideRegions(bar.RuneSegmentBars)
 	HideRechargeSegment(bar)
+	HideResourceBarSpark(bar)
 	if bar.SegmentTickFrame then
 		bar.SegmentTickFrame:Hide()
 	end
@@ -540,7 +591,6 @@ local function CreateTicks(bar, tickCount, tickColor)
 
 	if not tickFrame then
 		tickFrame = CreateFrame("Frame", nil, bar)
-		tickFrame:EnableMouse(false)
 		bar.SegmentTickFrame = tickFrame
 	end
 
@@ -571,7 +621,7 @@ local function UpdateTicks(bar, maxValue)
 	local hasPowerTokenSegments = bar.powerToken and SCMConstants.SegmentTicksByPowerToken[bar.powerToken]
 	local hasSegmentTicks = hasConfiguredSegments or hasPowerTokenSegments
 
-	if not barOptions or not barOptions.showTicks or not hasSegmentTicks or type(segmentCount) ~= "number" or segmentCount <= 1 then
+	if not barOptions or barOptions.textOnly or not barOptions.showTicks or not hasSegmentTicks or type(segmentCount) ~= "number" or segmentCount <= 1 then
 		HideRegions(bar.SegmentTicks)
 		if bar.SegmentTickFrame then
 			bar.SegmentTickFrame:Hide()
@@ -752,10 +802,11 @@ local function UpdateSegments(bar, maxValue, currentValue, resourceSegmentValues
 	local segmentBars = CreateSegments(bar, segmentCount)
 	local texturePath = bar.SCMTexturePath or LSM:Fetch("statusbar", barOptions.texture)
 	local r, g, b = GetPowerColor(bar.powerToken, bar.powerType)
+	local runeRechargeColor = bar.resourceKind == "runes" and SCM.resourceBarConfig.runeRechargeColor
 	local overflowR, overflowG, overflowB = CHARGED_COMBO_POINT_COLOR.r, CHARGED_COMBO_POINT_COLOR.g, CHARGED_COMBO_POINT_COLOR.b
 
 	if bar.resourceKind == "maelstromWeapon" then
-		local overflowColor = SCM.db.profile.options.resourceBar.maelstromOverflowColor
+		local overflowColor = SCM.resourceBarConfig.maelstromOverflowColor
 		if overflowColor and overflowColor.r and overflowColor.g and overflowColor.b then
 			overflowR, overflowG, overflowB = overflowColor.r, overflowColor.g, overflowColor.b
 		end
@@ -772,9 +823,17 @@ local function UpdateSegments(bar, maxValue, currentValue, resourceSegmentValues
 		segmentBar:SetPoint("LEFT", (segmentIndex - 1) * segmentWidth, 0)
 		segmentBar:SetWidth(segmentWidth)
 		segmentBar:SetHeight(segmentHeight)
+		if barOptions.textOnly then
+			segmentBar:GetStatusBarTexture():Hide()
+		else
+			segmentBar:GetStatusBarTexture():Show()
+		end
 
 		local segmentR, segmentG, segmentB = r, g, b
-		if chargedSegments and chargedSegments[segmentIndex] then
+		local segmentProgress = segmentProgressValues[segmentIndex] or 0
+		if runeRechargeColor and segmentProgress > 0 and segmentProgress < 1 then
+			segmentR, segmentG, segmentB = runeRechargeColor.r, runeRechargeColor.g, runeRechargeColor.b
+		elseif chargedSegments and chargedSegments[segmentIndex] then
 			if bar.resourceKind == "maelstromWeapon" then
 				segmentR, segmentG, segmentB = overflowR, overflowG, overflowB
 			else
@@ -783,7 +842,7 @@ local function UpdateSegments(bar, maxValue, currentValue, resourceSegmentValues
 		end
 
 		segmentBar:SetStatusBarColor(segmentR, segmentG, segmentB)
-		segmentBar:SetValue(segmentProgressValues[segmentIndex] or 0)
+		segmentBar:SetValue(segmentProgress)
 		segmentBar:Show()
 	end
 
@@ -799,20 +858,36 @@ local function ApplyBarAppearance(bar, barOptions)
 
 	bar.barOptions = barOptions
 
-	local texturePath = LSM:Fetch("statusbar", barOptions.texture)
-	bar.SCMTexturePath = texturePath
-	bar:SetStatusBarTexture(texturePath)
+	if not barOptions.textOnly then
+		local texturePath = LSM:Fetch("statusbar", barOptions.texture)
+		bar.SCMTexturePath = texturePath
+		bar:SetStatusBarTexture(texturePath)
+		bar:GetStatusBarTexture():Show()
 
-	if bar.SegmentFillBars then
-		for _, segmentBar in ipairs(bar.SegmentFillBars) do
-			segmentBar:SetStatusBarTexture(texturePath)
+		if bar.SegmentFillBars then
+			for _, segmentBar in ipairs(bar.SegmentFillBars) do
+				segmentBar:SetStatusBarTexture(texturePath)
+				segmentBar:GetStatusBarTexture():Show()
+			end
+		end
+		UpdateRechargeSegment(bar)
+
+		local statusBarTexture = bar:GetStatusBarTexture()
+		SetRegionPoint(statusBarTexture, bar)
+		UpdateResourceBarBackgroundTexture(bar, barOptions)
+	else
+		bar:GetStatusBarTexture():Hide()
+		bar.Background:Hide()
+		HideRechargeSegment(bar)
+		if bar.SegmentTickFrame then
+			bar.SegmentTickFrame:Hide()
+		end
+		if bar.SegmentFillBars then
+			for _, segmentBar in ipairs(bar.SegmentFillBars) do
+				segmentBar:GetStatusBarTexture():Hide()
+			end
 		end
 	end
-	UpdateRechargeSegment(bar)
-
-	local statusBarTexture = bar:GetStatusBarTexture()
-	SetRegionPoint(statusBarTexture, bar)
-	UpdateResourceBarBackgroundTexture(bar, barOptions)
 
 	local text = bar.Text
 	local fontPath = LSM:Fetch("font", barOptions.font)
@@ -828,7 +903,11 @@ local function ApplyBarAppearance(bar, barOptions)
 	text:SetShown(barOptions.showValues)
 
 	if bar.BorderFrame then
-		UpdateResourceBarBorder(bar, barOptions)
+		if barOptions.textOnly then
+			bar.BorderFrame:Hide()
+		else
+			UpdateResourceBarBorder(bar, barOptions)
+		end
 	end
 
 	if bar.Text then
@@ -836,6 +915,10 @@ local function ApplyBarAppearance(bar, barOptions)
 		if bar.SegmentTickFrame then
 			bar.SegmentTickFrame:SetFrameStrata(bar:GetFrameStrata())
 			bar.SegmentTickFrame:SetFrameLevel(bar:GetFrameLevel() + 2)
+		end
+		if bar.SparkFrame then
+			bar.SparkFrame:SetFrameStrata(bar:GetFrameStrata())
+			bar.SparkFrame:SetFrameLevel(bar:GetFrameLevel() + 4)
 		end
 		bar.Text:SetFrameLevel(bar:GetFrameLevel() + 3)
 	end
@@ -855,12 +938,24 @@ local function InitializeBarSkin(bar)
 		bar.BorderFrame = CreateFrame("Frame", nil, bar, "BackdropTemplate")
 	end
 
+	if not bar.SparkFrame then
+		bar.SparkFrame = CreateFrame("Frame", nil, bar)
+		bar.SparkFrame:SetAllPoints(bar)
+		bar.SparkFrame:SetClipsChildren(true)
+		bar.SparkFrame:SetFrameLevel(bar:GetFrameLevel() + 4)
+	end
+
+	if not bar.Spark then
+		bar.Spark = bar.SparkFrame:CreateTexture(nil, "OVERLAY", nil, 2)
+		bar.Spark:Hide()
+	end
+
 	-- If anyone wants to explain to me how to fix this then I'm all ears
 	bar.BorderFrame:ClearAllPoints()
 	PixelUtil.SetPoint(bar.BorderFrame, "TOPLEFT", bar, "TOPLEFT", 0, 0)
 	PixelUtil.SetPoint(bar.BorderFrame, "BOTTOMRIGHT", bar, "BOTTOMRIGHT", 0, 0)
 
-	local barOptions = bar.barOptions or SCM.db.profile.options.resourceBar
+	local barOptions = bar.barOptions or SCM.resourceBarConfig
 	UpdateResourceBarBorder(bar, barOptions)
 	bar.SCMStyled = true
 end
@@ -962,7 +1057,7 @@ function SCM:ApplyResourceBarAttributeDriver(forceHide)
 	if forceHide then
 		RegisterAttributeDriver(container, "state-visibility", "hide")
 	else
-		RegisterAttributeDriver(container, "state-visibility", SCM:GetVisibilityConditions(self.db.profile.options.resourceBar))
+		RegisterAttributeDriver(container, "state-visibility", SCM:GetVisibilityConditions(self.resourceBarConfig))
 	end
 
 	if container.SCMResourceBarInitialized and container.UpdateContainerShownState then
@@ -978,7 +1073,7 @@ local function SetBarHeight(bar, height)
 end
 
 function SCMResourceBarControllerMixin:ApplyResourceBarOptions()
-	local barOptions = SCM.db.profile.options.resourceBar
+	local barOptions = SCM.resourceBarConfig
 	self.barOptions = barOptions
 	self.primaryBarOptions = barOptions.primaryBar
 	self.secondaryBarOptions = barOptions.secondaryBar
@@ -989,17 +1084,23 @@ function SCMResourceBarControllerMixin:ApplyResourceBarOptions()
 	return barOptions
 end
 
-function SCMResourceBarControllerMixin:ApplyFrameWidthOptions(bar)
-	if InCombatLockdown() then
-		return false
+function SCMResourceBarControllerMixin:UpdateActiveAnchorFrame(anchor)
+	local activeAnchor, activeAnchorGroup
+	if type(anchor) == "string" then
+		activeAnchor, _, activeAnchorGroup = Utils.GetActiveAnchorFrame(anchor)
+	else
+		activeAnchor = anchor
 	end
 
+	self.SCMActiveAnchorFrame = activeAnchor
+	self.SCMActiveAnchorGroup = activeAnchorGroup
+	return activeAnchor
+end
+
+function SCMResourceBarControllerMixin:ApplyFrameWidthOptions(bar)
 	local specificBarOptions = bar.barOptions
 	local generalBarOptions = self.barOptions
-	local anchor = generalBarOptions.anchorFrame or DEFAULT_RESOURCE_BAR_ANCHOR
-	if type(anchor) == "string" then
-		anchor = SCM.Utils.GetAnchorFrame(anchor)
-	end
+	local anchor = self.SCMActiveAnchorFrame or self:UpdateActiveAnchorFrame(generalBarOptions.anchorFrame or DEFAULT_RESOURCE_BAR_ANCHOR)
 
 	if anchor then
 		local widthFromOptions = specificBarOptions.width
@@ -1012,11 +1113,18 @@ function SCMResourceBarControllerMixin:ApplyFrameWidthOptions(bar)
 		bar:SetWidth(desiredWidth)
 		local widthChanged = previousWidth ~= (bar:GetWidth() or 0)
 
-		if not bar.SCMResourceBarHook then
-			bar.SCMResourceBarHook = true
-			anchor:HookScript("OnSizeChanged", function()
+		bar.SCMResourceBarHooks = bar.SCMResourceBarHooks or {}
+		if not anchor.SCMProxyGroup and not bar.SCMResourceBarHooks[anchor] then
+			bar.SCMResourceBarHooks[anchor] = true
+			anchor:HookScript("OnSizeChanged", function(changedAnchor)
 				local barOptions = bar.barOptions
-				if not InCombatLockdown() and barOptions and barOptions.matchAnchorWidth then
+				local controller = bar.Controller
+				local generalBarOptions = controller and controller.barOptions or SCM.resourceBarConfig
+				if bar:IsProtected() or not (generalBarOptions.enabled and barOptions and barOptions.enabled and barOptions.matchAnchorWidth) then
+					return
+				end
+
+				if controller and controller.SCMActiveAnchorFrame == changedAnchor then
 					SCM:RefreshResourceBarConfig()
 				end
 			end)
@@ -1057,7 +1165,7 @@ function SCMResourceBarControllerMixin:OnUpdate(elapsed)
 	self:UpdateRefreshState()
 end
 
-function SCMResourceBarControllerMixin:RefreshResourceBars(refreshTicks)
+function SCMResourceBarControllerMixin:RefreshResourceBars(refreshTicks, optionsChanged)
 	local barOptions = self:ApplyResourceBarOptions()
 	local primaryBarOptions = barOptions.primaryBar
 	local secondaryBarOptions = barOptions.secondaryBar
@@ -1097,6 +1205,7 @@ function SCMResourceBarControllerMixin:RefreshResourceBars(refreshTicks)
 
 	if primaryBarOptions.enabled or secondaryBarOptions.enabled then
 		self:RegisterResourceBarEvents()
+		self:UpdateActiveAnchorFrame(barOptions.anchorFrame or DEFAULT_RESOURCE_BAR_ANCHOR)
 
 		local primaryWidthChanged = false
 		local secondaryWidthChanged = false
@@ -1111,8 +1220,8 @@ function SCMResourceBarControllerMixin:RefreshResourceBars(refreshTicks)
 		local refreshPrimaryTicks = refreshTicks or primaryResourceChanged or primaryWidthChanged or primaryHeightChanged
 		local refreshSecondaryTicks = refreshTicks or secondaryResourceChanged or secondaryWidthChanged or secondaryHeightChanged
 
-		self:RefreshBarDisplay(self.PrimaryBar, refreshPrimaryTicks, true)
-		self:RefreshBarDisplay(self.SecondaryBar, refreshSecondaryTicks, true)
+		self:RefreshBarDisplay(self.PrimaryBar, refreshPrimaryTicks, true, optionsChanged)
+		self:RefreshBarDisplay(self.SecondaryBar, refreshSecondaryTicks, true, optionsChanged)
 		self:UpdateContainerShownState()
 		self:UpdateRefreshState()
 
@@ -1125,54 +1234,60 @@ end
 function SCMResourceBarControllerMixin:ConfigurePrimaryBar()
 	local powerType, powerToken, altR, altG, altB = UnitPowerType("player")
 
-	--local forceMana = false
-	-- if UnitClassBase("player") == "DRUID" then
-	-- 	local shapeshiftFormID = GetShapeshiftFormID()
-	-- 	local customPowerType
-	-- 	local druidFormPowerTypes = GetDruidFormPowerTypes(self.primaryBarOptions)
-	-- 	if not shapeshiftFormID then
-	-- 		customPowerType = druidFormPowerTypes and druidFormPowerTypes[0]
-	-- 	elseif shapeshiftFormID == DRUID_BEAR_FORM then
-	-- 		customPowerType = druidFormPowerTypes and druidFormPowerTypes[1]
-	-- 	elseif shapeshiftFormID == DRUID_CAT_FORM then
-	-- 		customPowerType = druidFormPowerTypes and druidFormPowerTypes[2]
-	-- 	elseif shapeshiftFormID == DRUID_TRAVEL_FORM or shapeshiftFormID == DRUID_FLIGHT_FORM or shapeshiftFormID == DRUID_AQUATIC_FORM then
-	-- 		customPowerType = druidFormPowerTypes and druidFormPowerTypes[3]
-	-- 	elseif shapeshiftFormID >= DRUID_MOONKIN_FORM_1 and shapeshiftFormID <= DRUID_MOONKIN_FORM_2 then
-	-- 		customPowerType = druidFormPowerTypes and druidFormPowerTypes[4]
-	-- 	end
--- 
-	-- 	if customPowerType == "none" then
-	-- 		powerType = nil
-	-- 		powerToken = nil
-	-- 	else
-	-- 		powerType = customPowerType
-	-- 		powerToken = nil
--- 
-	-- 		if powerType == Enum.PowerType.Mana then
-	-- 			powerToken = "MANA"
-	-- 			forceMana = true
-	-- 		elseif powerType == Enum.PowerType.Rage then
-	-- 			powerToken = "RAGE"
-	-- 		elseif powerType == Enum.PowerType.Energy then
-	-- 			powerToken = "ENERGY"
-	-- 		elseif powerType == Enum.PowerType.LunarPower then
-	-- 			powerToken = "LUNAR_POWER"
-	-- 		end
--- 
-	-- 		local colorInfo = PowerBarColor[powerToken]
-	-- 		if colorInfo then
-	-- 			altR, altG, altB = colorInfo.r, colorInfo.g, colorInfo.b
-	-- 		end
-	-- 	end
-	-- end
+	local forceMana = false
+	if SCM.resourceBarConfig.active then
+		if UnitClassBase("player") == "DRUID" then
+			local shapeshiftFormID = GetShapeshiftFormID()
+			local customPowerType
+			local druidFormPowerTypes = GetDruidFormPowerTypes(self.primaryBarOptions)
+			if not shapeshiftFormID or shapeshiftFormID == 36 then
+				customPowerType = druidFormPowerTypes and druidFormPowerTypes[0]
+			elseif shapeshiftFormID == DRUID_BEAR_FORM then
+				customPowerType = druidFormPowerTypes and druidFormPowerTypes[1]
+			elseif shapeshiftFormID == DRUID_CAT_FORM then
+				customPowerType = druidFormPowerTypes and druidFormPowerTypes[2]
+			elseif shapeshiftFormID == DRUID_TRAVEL_FORM or shapeshiftFormID == DRUID_FLIGHT_FORM or shapeshiftFormID == DRUID_AQUATIC_FORM then
+				customPowerType = druidFormPowerTypes and druidFormPowerTypes[3]
+			elseif shapeshiftFormID >= DRUID_MOONKIN_FORM_1 and shapeshiftFormID <= DRUID_MOONKIN_FORM_2 then
+				customPowerType = druidFormPowerTypes and druidFormPowerTypes[4]
+			end
+			--
+			if customPowerType == "none" then
+				powerType = nil
+				powerToken = nil
+			else
+				powerType = customPowerType
+				powerToken = nil
+				--
+				if powerType == Enum.PowerType.Mana then
+					powerToken = "MANA"
+					forceMana = true
+				elseif powerType == Enum.PowerType.Rage then
+					powerToken = "RAGE"
+				elseif powerType == Enum.PowerType.Energy then
+					powerToken = "ENERGY"
+				elseif powerType == Enum.PowerType.LunarPower then
+					powerToken = "LUNAR_POWER"
+				end
+
+				local colorInfo = PowerBarColor[powerToken]
+				if colorInfo then
+					altR, altG, altB = colorInfo.r, colorInfo.g, colorInfo.b
+				end
+			end
+		elseif self.primaryBarOptions.forceMana then
+			forceMana = true
+			powerType = Enum.PowerType.Mana
+			powerToken = "MANA"
+		end
+	end
 
 	if not powerType or not powerToken then
 		ResetResourceBar(self.PrimaryBar)
 		return false
 	end
 
-	if powerType == Enum.PowerType.Mana and ShouldHideManaForCurrentRole(self.primaryBarOptions) then
+	if powerType == Enum.PowerType.Mana and ShouldHideManaForCurrentRole(self.primaryBarOptions) and not forceMana then
 		ResetResourceBar(self.PrimaryBar)
 		return false
 	end
@@ -1186,7 +1301,6 @@ end
 function SCMResourceBarControllerMixin:ConfigureSecondaryBar()
 	local primaryPowerType = UnitPowerType("player")
 	local secondaryResource
-	--local forceMana = false
 
 	if not UnitHasVehicleUI("player") then
 		local className = Utils.GetClass()
@@ -1207,37 +1321,49 @@ function SCMResourceBarControllerMixin:ConfigureSecondaryBar()
 		secondaryResource = nil
 	end
 
-	-- if UnitClassBase("player") == "DRUID" then
-	-- 	local shapeshiftFormID = GetShapeshiftFormID()
-	-- 	local customSecondaryResource
-	-- 	local druidFormPowerTypes = GetDruidFormPowerTypes(self.secondaryBarOptions)
--- 
-	-- 	if not shapeshiftFormID then
-	-- 		customSecondaryResource = druidFormPowerTypes and druidFormPowerTypes[0]
-	-- 	elseif shapeshiftFormID == DRUID_BEAR_FORM then
-	-- 		customSecondaryResource = druidFormPowerTypes and druidFormPowerTypes[1]
-	-- 	elseif shapeshiftFormID == DRUID_CAT_FORM then
-	-- 		customSecondaryResource = druidFormPowerTypes and druidFormPowerTypes[2]
-	-- 	elseif shapeshiftFormID == DRUID_TRAVEL_FORM or shapeshiftFormID == DRUID_FLIGHT_FORM or shapeshiftFormID == DRUID_AQUATIC_FORM then
-	-- 		customSecondaryResource = druidFormPowerTypes and druidFormPowerTypes[3]
-	-- 	elseif shapeshiftFormID >= DRUID_MOONKIN_FORM_1 and shapeshiftFormID <= DRUID_MOONKIN_FORM_2 then
-	-- 		customSecondaryResource = druidFormPowerTypes and druidFormPowerTypes[4]
-	-- 	end
--- 
-	-- 	if customSecondaryResource == "none" then
-	-- 		secondaryResource = nil
-	-- 	else
-	-- 		local primaryResourcePowerType = self.PrimaryBar.powerType
-	-- 		if customSecondaryResource ~= primaryResourcePowerType then
-	-- 			secondaryResource = SCMConstants.DruidSecondaryResourceByPowerType[customSecondaryResource]
-	-- 			forceMana = secondaryResource and customSecondaryResource == Enum.PowerType.Mana
-	-- 		else
-	-- 			secondaryResource = nil
-	-- 		end
-	-- 	end
-	-- end
+	local forceMana = false
+	if SCM.resourceBarConfig.active then
+		if UnitClassBase("player") == "DRUID" then
+			local shapeshiftFormID = GetShapeshiftFormID()
+			local customSecondaryResource
+			local druidFormPowerTypes = GetDruidFormPowerTypes(self.secondaryBarOptions)
 
-	if secondaryResource and secondaryResource.powerType == Enum.PowerType.Mana and ShouldHideManaForCurrentRole(self.secondaryBarOptions) then
+			if not shapeshiftFormID then
+				customSecondaryResource = druidFormPowerTypes and druidFormPowerTypes[0]
+			elseif shapeshiftFormID == DRUID_BEAR_FORM then
+				customSecondaryResource = druidFormPowerTypes and druidFormPowerTypes[1]
+			elseif shapeshiftFormID == DRUID_CAT_FORM then
+				customSecondaryResource = druidFormPowerTypes and druidFormPowerTypes[2]
+			elseif shapeshiftFormID == DRUID_TRAVEL_FORM or shapeshiftFormID == DRUID_FLIGHT_FORM or shapeshiftFormID == DRUID_AQUATIC_FORM then
+				customSecondaryResource = druidFormPowerTypes and druidFormPowerTypes[3]
+			elseif shapeshiftFormID >= DRUID_MOONKIN_FORM_1 and shapeshiftFormID <= DRUID_MOONKIN_FORM_2 then
+				customSecondaryResource = druidFormPowerTypes and druidFormPowerTypes[4]
+			end
+
+			if customSecondaryResource == "none" then
+				secondaryResource = nil
+			else
+				local primaryResourcePowerType = self.PrimaryBar.powerType
+				if customSecondaryResource ~= primaryResourcePowerType then
+					secondaryResource = SCMConstants.DruidSecondaryResourceByPowerType[customSecondaryResource]
+					forceMana = secondaryResource and customSecondaryResource == Enum.PowerType.Mana
+				else
+					secondaryResource = nil
+				end
+			end
+		elseif self.secondaryBarOptions.forceMana then
+			local primaryResourcePowerType = self.PrimaryBar.powerType
+			if primaryResourcePowerType ~= Enum.PowerType.Mana then
+				forceMana = true
+				secondaryResource = {
+					powerType = Enum.PowerType.Mana,
+					powerToken = "MANA",
+				}
+			end
+		end
+	end
+
+	if secondaryResource and secondaryResource.powerType == Enum.PowerType.Mana and ShouldHideManaForCurrentRole(self.secondaryBarOptions) and not forceMana then
 		secondaryResource = nil
 	end
 
@@ -1249,17 +1375,13 @@ function SCMResourceBarControllerMixin:ConfigureSecondaryBar()
 	return ConfigureBarForResource(self.SecondaryBar, secondaryResource)
 end
 
-function SCMResourceBarControllerMixin:RefreshBarDisplay(bar, refreshTicks, skipWidthOptions)
+function SCMResourceBarControllerMixin:RefreshBarDisplay(bar, refreshTicks, skipWidthOptions, optionsChanged)
 	if not bar.powerToken then
+		HideResourceBarSpark(bar)
 		return
 	end
 
-	local currentValue, maxValue, displayValue, resourceSegmentValues = GetCurrentPowerValue(
-		bar.resourceKind,
-		bar.powerType,
-		bar.spellID,
-		bar.segmentCount
-	)
+	local currentValue, maxValue, displayValue, resourceSegmentValues = GetCurrentPowerValue(bar.resourceKind, bar.powerType, bar.spellID, bar.segmentCount)
 	local missingValues = maxValue == nil
 	if bar.resourceKind ~= "spellCharges" then
 		missingValues = missingValues or currentValue == nil
@@ -1277,6 +1399,7 @@ function SCMResourceBarControllerMixin:RefreshBarDisplay(bar, refreshTicks, skip
 		if refreshTicks then
 			RefreshBarTicks(bar)
 		end
+		HideResourceBarSpark(bar)
 		bar:Hide()
 		return
 	end
@@ -1286,6 +1409,9 @@ function SCMResourceBarControllerMixin:RefreshBarDisplay(bar, refreshTicks, skip
 	end
 	bar:SetMinMaxValues(0, maxValue)
 	bar:SetValue(currentValue)
+	if not skipWidthOptions then
+		self:UpdateActiveAnchorFrame(self.barOptions.anchorFrame or DEFAULT_RESOURCE_BAR_ANCHOR)
+	end
 	local widthChanged = not skipWidthOptions and self:ApplyFrameWidthOptions(bar)
 	if bar.resourceKind == "spellCharges" then
 		bar.SCMSegmentedDisplay = nil
@@ -1302,6 +1428,39 @@ function SCMResourceBarControllerMixin:RefreshBarDisplay(bar, refreshTicks, skip
 		UpdateSegments(bar, maxValue, currentValue, resourceSegmentValues)
 	end
 	bar:Show()
+
+	local spark = bar.Spark
+	local barOptions = bar.barOptions
+	local sparkOptions = barOptions.spark
+	if spark and sparkOptions.enable and not barOptions.textOnly then
+		local sparkAnchor
+		local sparkFrameAlpha = 1
+		local showSpark = true
+		if bar.resourceKind == "spellCharges" then
+			local rechargeSegment = bar.RechargeSegment
+			if rechargeSegment and rechargeSegment:IsShown() then
+				sparkAnchor = rechargeSegment:GetStatusBarTexture()
+			end
+			showSpark = sparkAnchor ~= nil
+		else
+			sparkFrameAlpha = currentValue
+		end
+
+		if showSpark then
+			sparkAnchor = sparkAnchor or bar:GetStatusBarTexture()
+			ApplyResourceBarSparkOptions(bar, sparkAnchor, optionsChanged)
+			if bar.SparkFrame then
+				bar.SparkFrame:SetAlpha(sparkFrameAlpha)
+			end
+
+			spark:Show()
+		else
+			HideResourceBarSpark(bar)
+		end
+	elseif spark then
+		HideResourceBarSpark(bar)
+	end
+
 	if refreshTicks or widthChanged then
 		RefreshBarTicks(bar, maxValue)
 	end
@@ -1342,7 +1501,7 @@ function SCMResourceBarControllerMixin:RefreshBarDisplay(bar, refreshTicks, skip
 	end
 
 	if bar.resourceKind == "stagger" and self.barOptions.staggerDisplayAsPercent then
-		staggerPercent = staggerPercent or (maxValue > 0 and currentValue / maxValue or 0)
+		staggerPercent = staggerPercent or (not issecretvalue(maxValue) and not issecretvalue(currentValue) and (maxValue > 0 and currentValue / maxValue or 0)) or 0
 		textValue:SetText(floor(staggerPercent * 100 + 0.5) .. "%")
 	elseif bar.powerType == Enum.PowerType.Mana then
 		local manaPercent = UnitPowerPercent("player", bar.powerType, false, CurveConstants.ScaleTo100)
@@ -1374,6 +1533,7 @@ function SCMResourceBarControllerMixin:UpdateBarLayout()
 
 	local spacing = barOptions.spacing
 	local growsUp = barOptions.growDirection == "UP"
+	local frameStrata = barOptions.frameStrata or "BACKGROUND"
 
 	local primaryHeightChanged = false
 	local secondaryHeightChanged = false
@@ -1384,6 +1544,7 @@ function SCMResourceBarControllerMixin:UpdateBarLayout()
 	if primaryShown then
 		primaryHeightChanged = SetBarHeight(self.PrimaryBar, primaryHeight)
 		self.PrimaryBar:SetPoint("BOTTOM", self, "BOTTOM")
+		self.PrimaryBar:SetFrameStrata(frameStrata)
 	end
 
 	if secondaryShown then
@@ -1397,6 +1558,7 @@ function SCMResourceBarControllerMixin:UpdateBarLayout()
 		else
 			self.SecondaryBar:SetPoint("BOTTOM", self, "BOTTOM")
 		end
+		self.SecondaryBar:SetFrameStrata(frameStrata)
 	end
 
 	if primaryShown and secondaryShown then
@@ -1467,13 +1629,28 @@ function SCMResourceBarControllerMixin:Initialize()
 	self:SetScript("OnAttributeChanged", self.OnAttributeChanged)
 	self:SetScript("OnEvent", self.OnEvent)
 	self:RegisterResourceBarEvents()
+	EventRegistry:RegisterCallback(ANCHOR_PROXY_SIZE_CHANGED_EVENT, function(_, proxyGroup, proxy, _width, _height, _selectedAnchorRef, isActiveProxy)
+		local barOptions = SCM.resourceBarConfig
+		local primaryBarOptions = barOptions.primaryBar
+		local secondaryBarOptions = barOptions.secondaryBar
+		local primaryMatchesAnchor = primaryBarOptions.enabled and primaryBarOptions.matchAnchorWidth
+		local secondaryMatchesAnchor = secondaryBarOptions.enabled and secondaryBarOptions.matchAnchorWidth
+		if not (barOptions.enabled and isActiveProxy and (primaryMatchesAnchor or secondaryMatchesAnchor)) then
+			return
+		end
+
+		if self.SCMActiveAnchorFrame == proxy or self.SCMActiveAnchorGroup == proxyGroup then
+			self.SCMActiveAnchorFrame = proxy
+			SCM:RefreshResourceBarConfig()
+		end
+	end, self)
 
 	self:RefreshResourceBars(true)
 end
 
 function SCM:InitializeResourceBars()
 	local container = _G[RESOURCE_BAR_FRAME_NAME]
-	local barOptions = self.db.profile.options.resourceBar
+	local barOptions = self.resourceBarConfig
 	if not container or container.SCMResourceBarInitialized or not barOptions.enabled then
 		return
 	end
@@ -1488,7 +1665,7 @@ function SCM:InitializeResourceBars()
 	container:Initialize()
 end
 
-function SCM:RefreshResourceBarConfig(refreshTicks)
+function SCM:RefreshResourceBarConfig(refreshTicks, optionsChanged)
 	local container = _G[RESOURCE_BAR_FRAME_NAME]
 	if not container then
 		return
@@ -1502,7 +1679,7 @@ function SCM:RefreshResourceBarConfig(refreshTicks)
 		end
 	end
 
-	container:RefreshResourceBars(refreshTicks)
+	container:RefreshResourceBars(refreshTicks, optionsChanged)
 end
 
 function SCM:SetPrimaryResourceBarColorOverride(r, g, b)

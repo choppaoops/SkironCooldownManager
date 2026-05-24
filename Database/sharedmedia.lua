@@ -3,7 +3,7 @@ local LSM = LibStub("LibSharedMedia-3.0")
 LSM:Register("border", "1x1", [[Interface\Buttons\WHITE8X8]])
 
 local normalFont = CreateFont("Permok_Expressway")
-normalFont:SetFont("Interface\\AddOns\\SkironCooldownManager\\Nedia\\Fonts\\Expressway.ttf", 13, "OUTLINE")
+normalFont:SetFont("Interface\\AddOns\\SkironCooldownManager\\Media\\Fonts\\Expressway.ttf", 13, "OUTLINE")
 normalFont:SetTextColor(1, 1, 1, 1)
 
 local mediumFont = CreateFont("Permok_Expressway_Medium")

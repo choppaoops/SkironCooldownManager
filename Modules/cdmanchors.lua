@@ -4,6 +4,8 @@ local LibCustomGlow = LibStub("LibCustomGlow-1.0")
 local Cache = SCM.Cache
 local Utils = SCM.Utils
 
+local ANCHOR_PROXY_SIZE_CHANGED_EVENT = "SkironCooldownManager.AnchorProxy.SizeChanged"
+
 local PIVOT_MAP = {
 	LEFT = {
 		TOP = "TOPRIGHT",
@@ -112,19 +114,34 @@ local function RemoveProxy(state)
 	end
 end
 
+local function OnProxySizeChanged(proxy, width, height)
+	local group = proxy.SCMProxyGroup
+	if not group then
+		return
+	end
+
+	local state = Cache.cachedAnchorStates[group]
+	local selectedAnchorRef = state and state.currentSelectedAnchorFrame
+	local isActiveProxy = state and state.currentProxyActive and state.currentProxyFrame == proxy or false
+	EventRegistry:TriggerEvent(ANCHOR_PROXY_SIZE_CHANGED_EVENT, group, proxy, width, height, selectedAnchorRef, isActiveProxy)
+end
+
 local function GetProxy(group)
 	local state = GetAnchorState(group)
 	local proxy = state.currentProxyFrame
+
 	if not proxy and not InCombatLockdown() then
 		proxy = CreateFrame("Frame", "SCM_GroupAnchorProxy_" .. group, UIParent)
 		proxy:Hide()
+		proxy.SCMProxyGroup = group
+		proxy:HookScript("OnSizeChanged", OnProxySizeChanged)
 		state.currentProxyFrame = proxy
 	end
 
 	return proxy, state
 end
 
-local function GetAnchorPointOffsets(point, growDir, iconSize, xOffset, yOffset, anchorOffsetY)
+local function GetAnchorPointOffsets(point, growDir, iconWidth, xOffset, yOffset, anchorOffsetY)
 	local xOffsetMultiplier = 0
 	if growDir == "LEFT" then
 		xOffsetMultiplier = (point == "TOPLEFT" and 1) or ((point == "TOP" or point == "BOTTOM" or point == "CENTER") and 0.5) or 0
@@ -132,7 +149,7 @@ local function GetAnchorPointOffsets(point, growDir, iconSize, xOffset, yOffset,
 		xOffsetMultiplier = (point == "TOPRIGHT" and -1) or ((point == "TOP" or point == "BOTTOM" or point == "CENTER") and -0.5) or 0
 	end
 
-	return xOffset + ((iconSize or 0) * xOffsetMultiplier), yOffset + (anchorOffsetY or 0)
+	return SCM:PixelPerfect(xOffset + (iconWidth or 0) * xOffsetMultiplier), SCM:PixelPerfect(yOffset + anchorOffsetY)
 end
 
 local function GetAnchorOffset(group, visited)
@@ -149,6 +166,22 @@ local function GetAnchorOffset(group, visited)
 
 	if visited[group] then
 		return state.transformX or 0, state.transformY or 0
+	end
+
+	if state.currentProxyActive then
+		local anchorFrame = SCM.anchorFrames[group]
+		local proxy = state.currentProxyFrame
+		local anchorX, anchorY
+		local proxyX, proxyY
+		if anchorFrame then
+			anchorX, anchorY = anchorFrame:GetCenter()
+		end
+		if proxy then
+			proxyX, proxyY = proxy:GetCenter()
+		end
+		if anchorX and anchorY and proxyX and proxyY then
+			return proxyX - anchorX, proxyY - anchorY
+		end
 	end
 
 	if not state.parentGroup then
@@ -316,6 +349,7 @@ local function RefreshAnchorVisibilitySelection(group, currentAnchorFrame)
 	end
 
 	state.currentSelectedAnchorFrame = selectedAnchorFrame
+	state.layoutSignature = nil
 	state.currentProxyRequired = InCombatLockdown() or nil
 	SCM:ApplyAnchorGroupCDManagerConfig(group)
 end
@@ -348,7 +382,7 @@ local function HookAnchorVisibilityFrame(frame, group, anchor)
 	frame:HookScript("OnHide", OnAnchorVisibilityChanged)
 end
 
-local function SetAnchorVisibilityHooks(group, anchor, selectedAnchorFrame)
+local function SetAnchorVisibilityHooks(group, anchor, selectedAnchorFrame, groupAnchor)
 	local state = GetAnchorState(group)
 	if type(anchor) ~= "string" or not anchor:find(",", 1, true) then
 		state.currentAnchorFrame = nil
@@ -383,13 +417,18 @@ local function SetAnchorVisibilityHooks(group, anchor, selectedAnchorFrame)
 	end
 end
 
-function SCM:GetManagedAnchorChildAnchor(group, groupAnchor, point, anchor, relativePoint, xOffset, yOffset, growDir, iconSize, anchorOffsetY)
+function SCM:GetManagedAnchorChildAnchor(group, groupAnchor, point, anchor, relativePoint, xOffset, yOffset, growDir, offsetWidth, frameWidth, frameHeight, anchorOffsetY, forceProxyAnchor)
 	local state = Cache.cachedAnchorStates[group]
 	if not state then
 		return groupAnchor, false
 	end
 
-	local useProxy = InCombatLockdown() and state.currentAnchorFrame == anchor and (state.currentProxyRequired or state.currentProxyActive)
+	if not (groupAnchor and groupAnchor:IsProtected()) then
+		RemoveProxy(state)
+		return groupAnchor, false
+	end
+
+	local useProxy = InCombatLockdown() and (forceProxyAnchor or (state.currentAnchorFrame == anchor and (state.currentProxyRequired or state.currentProxyActive)))
 
 	if not useProxy then
 		if not InCombatLockdown() then
@@ -411,18 +450,19 @@ function SCM:GetManagedAnchorChildAnchor(group, groupAnchor, point, anchor, rela
 
 	proxy:SetFrameStrata((groupAnchor and groupAnchor:GetFrameStrata()) or "HIGH")
 	proxy:SetScale((groupAnchor and groupAnchor:GetScale()) or Cache.cachedViewerScale or 1)
-	proxy:SetSize(SCM:PixelPerfect(max(state.effectiveWidth or 0, iconSize or 1, 1)), SCM:PixelPerfect(max(state.effectiveHeight or 0, iconSize or 1, 1)))
-	proxy:ClearAllPoints()
-	proxy:SetPoint(self:GetAnchorPivot(point, growDir), target, relativePoint, GetAnchorPointOffsets(point, growDir, iconSize, xOffset, yOffset, anchorOffsetY))
-	proxy:Show()
-
+	
 	state.currentProxyRequired = nil
 	state.currentProxyActive = true
+
+	proxy:SetSize(SCM:PixelPerfect(max(frameWidth, 1)), SCM:PixelPerfect(max(frameHeight, 1)))
+	proxy:ClearAllPoints()
+	proxy:SetPoint(self:GetAnchorPivot(point, growDir), target, relativePoint, GetAnchorPointOffsets(point, growDir, offsetWidth, xOffset, yOffset, anchorOffsetY))
+	proxy:Show()
 
 	return proxy, true
 end
 
-function SCM:GetAnchor(group, point, anchor, relativePoint, xOffset, yOffset, growDir, iconSize, resetSize, anchorOffsetY)
+function SCM:GetAnchor(group, point, anchor, relativePoint, xOffset, yOffset, growDir, offsetWidth, frameWidth, frameHeight, anchorOffsetY)
 	local anchorFrame = self.anchorFrames[group]
 	if not anchorFrame then
 		anchorFrame = CreateFrame("Frame", "SCM_GroupAnchor_" .. group, UIParent)
@@ -454,40 +494,38 @@ function SCM:GetAnchor(group, point, anchor, relativePoint, xOffset, yOffset, gr
 		self.anchorFrames[group] = anchorFrame
 	end
 
-	if not (point and anchor) or InCombatLockdown() then
+	if not (point and anchor) or (InCombatLockdown() and anchorFrame:IsProtected()) then
 		return anchorFrame
 	end
 
-	anchorFrame:Show()
+	local state = GetAnchorState(group)
+	if anchorFrame:IsProtected() then
+		GetProxy(group)
+	end
 
 	local target = anchor
 	local selectedAnchorRef
 	if type(target) == "string" then
 		target, selectedAnchorRef = Utils.GetAnchorFrame(target)
-
-		if type(selectedAnchorRef) == "string" and selectedAnchorRef:sub(1, 7) == "ANCHOR:" and target then
-			anchorFrame:SetScale(target:GetScale())
-		end
 	end
-	SetAnchorVisibilityHooks(group, anchor, selectedAnchorRef)
+	local usesVisibilitySelection = type(anchor) == "string" and anchor:find(",", 1, true)
+	if usesVisibilitySelection or state.currentAnchorFrame or state.currentSelectedAnchorFrame then
+		SetAnchorVisibilityHooks(group, anchor, selectedAnchorRef, anchorFrame)
+	end
 
 	target = target or UIParent
 
 	local pivot = self:GetAnchorPivot(point, growDir)
-	local appliedXOffset, appliedYOffset = GetAnchorPointOffsets(point, growDir, iconSize, xOffset, yOffset, anchorOffsetY)
+	local appliedXOffset, appliedYOffset = GetAnchorPointOffsets(point, growDir, offsetWidth, xOffset, yOffset, anchorOffsetY)
 
-	if resetSize then
-		anchorFrame:SetSize(SCM:PixelPerfect(iconSize), SCM:PixelPerfect(iconSize))
-	else
-		anchorFrame:SetSize(SCM:PixelPerfect(max(anchorFrame:GetWidth(), iconSize)), SCM:PixelPerfect(max(anchorFrame:GetHeight(), iconSize)))
-	end
+	anchorFrame:SetSize(SCM:PixelPerfect(frameWidth), SCM:PixelPerfect(frameHeight))
 	anchorFrame:SetScale(Cache.cachedViewerScale or 1)
 	anchorFrame:ClearAllPoints()
 	anchorFrame:SetPoint(pivot, target, relativePoint, appliedXOffset, appliedYOffset)
 	anchorFrame:Show()
-	RemoveProxy(GetAnchorState(group))
+	RemoveProxy(state)
 
-	local shouldStartDefaultHighlight = self.OptionsFrame ~= nil
+	local shouldStartDefaultHighlight = self.OptionsFrame
 		and self.OptionsFrame:IsShown()
 		and not anchorFrame.isGlowActive
 		and anchorFrame.SCMHighlightState ~= "default"

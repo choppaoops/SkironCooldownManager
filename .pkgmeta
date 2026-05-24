@@ -16,3 +16,6 @@ externals:
 ignore:
   - ".editorconfig"
   - "stylua.toml"
+manual-changelog:
+  filename: CHANGELOG.md
+  markup-type: markdown

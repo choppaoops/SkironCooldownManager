@@ -5,26 +5,45 @@ local Icons = SCM.Icons
 local Cache = SCM.Cache
 local Constants = SCM.Constants
 
+local NumericRuleFormatter = C_StringUtil.CreateNumericRuleFormatter()
+Cooldowns.NumericRuleFormatter = NumericRuleFormatter
+
+function Cooldowns.ApplyNumericRuleFormatter(cooldownFrame)
+	if cooldownFrame and cooldownFrame.SetCountdownFormatter and not cooldownFrame.SCMFormatter then
+		cooldownFrame.SCMFormatter = true
+		cooldownFrame:SetCountdownFormatter(NumericRuleFormatter)
+	end
+end
+
+function Cooldowns:ApplyFormatterSettings()
+	local options = SCM.db.profile.options
+
+	NumericRuleFormatter:SetBreakpoints(options.cooldownBreakpoints)
+end
+
 local function OnBuffCooldownSet(self)
 	local parent = (self.SCMConfig and self) or self:GetParent()
-	if not parent or not parent.SCMConfig then
+	if not parent or not parent.SCMConfig or (not parent.SCMCheckCooldownFrame and not parent.auraInstanceID) then
 		return
 	end
 
-	if parent.SCMAuraInstanceID and parent.auraInstanceID and parent.auraInstanceID ~= parent.SCMAuraInstanceID then
+	if parent.auraInstanceID and (not parent.SCMAuraInstanceID or parent.auraInstanceID ~= parent.SCMAuraInstanceID) then
 		parent.SCMAuraInstanceID = parent.auraInstanceID
-	else
-		parent.SCMAuraInstanceID = parent.SCMAuraInstanceID or parent.auraInstanceID
 	end
 
 	if not parent.SCMHidden or parent.SCMConfig.alwaysShow then
 		Icons.UpdateChildDesaturation(parent, false)
 		Icons.UpdateChildGlow(parent, false)
+
+		if parent.SCMConfig.showWhileInactive then
+			Icons.HideChild(parent)
+			SCM:ApplyAnchorGroupCDManagerConfig(parent.SCMGroup, nil, parent.viewerFrame and parent.viewerFrame.SCMUpdateScope)
+		end
 	elseif parent.SCMHidden then
 		Icons.ShowChild(parent)
 		Icons.UpdateChildDesaturation(parent, false)
 		Icons.UpdateChildGlow(parent, false)
-		SCM:ApplyAnchorGroupCDManagerConfig(parent.SCMGroup)
+		SCM:ApplyAnchorGroupCDManagerConfig(parent.SCMGroup, nil, parent.viewerFrame and parent.viewerFrame.SCMUpdateScope)
 	end
 end
 
@@ -33,6 +52,7 @@ local function OnBuffCooldownEnd(self)
 	if not parent or not parent.SCMConfig then
 		return
 	end
+
 	if parent.SCMAuraInstanceID and not parent.SCMCheckCooldownFrame then
 		if not C_UnitAuras.GetAuraDataByAuraInstanceID("player", parent.SCMAuraInstanceID) then
 			parent.SCMAuraInstanceID = nil
@@ -49,8 +69,8 @@ local function OnBuffCooldownEnd(self)
 	end
 
 	--local options = parent.SCMBuffOptions
-	if not parent.SCMHidden then
-		SCM:ApplyAnchorGroupCDManagerConfig(parent.SCMGroup)
+	if not parent.SCMHidden or (parent.SCMHidden and parent.SCMConfig.showWhileInactive) then
+		SCM:ApplyAnchorGroupCDManagerConfig(parent.SCMGroup, nil, parent.viewerFrame and parent.viewerFrame.SCMUpdateScope)
 	end
 end
 
@@ -91,7 +111,7 @@ local function OnBuffHidePandemicStateFrame(self)
 end
 
 function Cooldowns.SetupBuffIconHooks(child, options)
-	if child.SCMShowHook then
+	if child.SCMShowHook and (not Constants.FakeAuras[child.SCMSpellID] or child.SCMCheckCooldownFrame) then
 		return
 	end
 
@@ -99,26 +119,32 @@ function Cooldowns.SetupBuffIconHooks(child, options)
 	child.SCMBuffOptions = options
 
 	-- Cooldowns
+	if Constants.FakeAuras[child.SCMSpellID] or Constants.TargetAuras[child.SCMSpellID] then
+		if not child.SCMCooldownHooked then
+			hooksecurefunc(child.Cooldown, "SetCooldown", OnBuffCooldownSet)
+			hooksecurefunc(child.Cooldown, "Clear", OnBuffCooldownEnd)
+			child.Cooldown:HookScript("OnCooldownDone", OnBuffCooldownEnd)
+			child.SCMCooldownHooked = true
+		end
 
-	if Constants.FakeAuras[child.SCMSpellID] then
-		hooksecurefunc(child.Cooldown, "SetCooldown", OnBuffCooldownSet)
-		hooksecurefunc(child.Cooldown, "Clear", OnBuffCooldownEnd)
-		child.Cooldown:HookScript("OnCooldownDone", OnBuffCooldownEnd)
-		child.SCMCheckCooldownFrame = true
-	elseif Constants.TargetAuras[child.SCMSpellID] then
-		hooksecurefunc(child.Cooldown, "SetCooldown", OnBuffCooldownSet)
-		hooksecurefunc(child.Cooldown, "Clear", OnBuffCooldownEnd)
-		--child.Cooldown:HookScript("OnCooldownDone", OnBuffCooldownEnd)
 		child.SCMCheckCooldownFrame = true
 	else
-		hooksecurefunc(child, "OnAuraInstanceInfoSet", OnBuffCooldownSet)
-		hooksecurefunc(child, "OnAuraInstanceInfoCleared", OnBuffCooldownEnd)
+		if not child.SCMAuraHooked then
+			hooksecurefunc(child, "OnAuraInstanceInfoSet", OnBuffCooldownSet)
+			hooksecurefunc(child, "OnAuraInstanceInfoCleared", OnBuffCooldownEnd)
+			child.SCMAuraHooked = true
+		end
+
+		child.SCMCheckCooldownFrame = nil
 	end
 
 	-- Pandmic Alerts
-	hooksecurefunc(child, "TriggerPandemicAlert", OnBuffTriggerPandemicAlert)
-	hooksecurefunc(child, "ShowPandemicStateFrame", OnBuffShowPandemicStateFrame)
-	hooksecurefunc(child, "HidePandemicStateFrame", OnBuffHidePandemicStateFrame)
+	if not child.SCMPandemicHooked then
+		hooksecurefunc(child, "TriggerPandemicAlert", OnBuffTriggerPandemicAlert)
+		hooksecurefunc(child, "ShowPandemicStateFrame", OnBuffShowPandemicStateFrame)
+		hooksecurefunc(child, "HidePandemicStateFrame", OnBuffHidePandemicStateFrame)
+		child.SCMPandemicHooked = true
+	end
 end
 
 function Cooldowns.IsChildOnCooldown(child)
@@ -127,12 +153,7 @@ function Cooldowns.IsChildOnCooldown(child)
 	end
 
 	local spellCooldownInfo = C_Spell.GetSpellCooldown(child.SCMSpellID)
-	if spellCooldownInfo and spellCooldownInfo.isOnGCD then
-		return
-	end
-
-	local hasCooldown = child.Cooldown:IsShown()
-	return hasCooldown
+	return spellCooldownInfo and spellCooldownInfo.isActive and not spellCooldownInfo.isOnGCD
 end
 
 function Cooldowns.SetNormalCooldown(self, parent)
@@ -142,18 +163,16 @@ function Cooldowns.SetNormalCooldown(self, parent)
 	local durationObject
 	local desaturate = false
 
-	if cooldownData.charges then
+	local spellCooldown = C_Spell.GetSpellCooldown(parent.SCMSpellID)
+	if spellCooldown and spellCooldown.isActive and not spellCooldown.isOnGCD then
+		desaturate = true
+		durationObject = C_Spell.GetSpellCooldownDuration(parent.SCMSpellID, true)
+	end
+
+	if cooldownData.charges and not durationObject then
 		local spellCharges = C_Spell.GetSpellCharges(parent.SCMSpellID)
 		if spellCharges and spellCharges.isActive and not spellCharges.isOnGCD then
 			durationObject = C_Spell.GetSpellChargeDuration(parent.SCMSpellID, true)
-		end
-	end
-
-	if not durationObject then
-		local spellCooldown = C_Spell.GetSpellCooldown(parent.SCMSpellID)
-		if spellCooldown and spellCooldown.isActive and not spellCooldown.isOnGCD then
-			desaturate = true
-			durationObject = C_Spell.GetSpellCooldownDuration(parent.SCMSpellID, true)
 		end
 	end
 
@@ -208,18 +227,19 @@ function Cooldowns.OverwriteRegularChildCooldownBySpellID(spellID, overrideSpell
 	OverwriteViewerChildCooldown(UtilityCooldownViewer, spellID, cooldownInfo)
 end
 
-local function OnRegularCooldownChanged(self)
+local function OnRegularCooldownChanged(self, changeType)
 	local parent = self:GetParent()
 	if not (parent and parent.SCMConfig) or self.SCMSettingRegularSpellCooldown or self.SCMClearingGCD then
 		return
 	end
 
 	local options = SCM.db.profile.options
-	if options.disableRegularIconActiveSwipe and not parent.SCMConfig.forceActiveSwipe and self:GetUseAuraDisplayTime() then
+	local useAuraDisplayTime = self:GetUseAuraDisplayTime()
+	if options.disableRegularIconActiveSwipe and not parent.SCMConfig.forceActiveSwipe and useAuraDisplayTime then
 		Cooldowns.OverrideRegularAuraCooldown(self, parent, options)
-	elseif options.disableGCD then
+	elseif options.disableGCD or (changeType == "CLEAR" and Constants.FixBlizzardSpells[parent.SCMSpellID]) then
 		Cooldowns.SetNormalCooldown(self, parent)
-	elseif parent.Icon.SCMDesaturated and not self:GetUseAuraDisplayTime() then
+	elseif parent.Icon.SCMDesaturated and not useAuraDisplayTime then
 		parent.Icon.SCMDesaturated = nil
 		parent.Icon:SetDesaturated(false)
 	end
@@ -235,13 +255,15 @@ local function OnRegularCooldownChanged(self)
 				elseif viewer == UtilityCooldownViewer then
 					SCM:ApplyUtilityCDManagerConfig()
 				end
+			elseif parent.SCMGroup then
+				SCM:ApplyAnchorGroupCDManagerConfig(parent.SCMGroup, parent.SCMGlobal)
 			else
 				SCM:ApplyAllCDManagerConfigs()
 			end
 		end
 	end
 
-	Icons.UpdateChildGlow(parent, not self:GetUseAuraDisplayTime())
+	Icons.UpdateChildGlow(parent, not useAuraDisplayTime)
 end
 
 function Cooldowns.SetupCooldownHooks(child)
@@ -249,8 +271,12 @@ function Cooldowns.SetupCooldownHooks(child)
 		return
 	end
 
-	hooksecurefunc(child.Cooldown, "SetCooldown", OnRegularCooldownChanged)
-	hooksecurefunc(child.Cooldown, "Clear", OnRegularCooldownChanged)
+	hooksecurefunc(child.Cooldown, "SetCooldown", function(self)
+		OnRegularCooldownChanged(self, "SET")
+	end)
+	hooksecurefunc(child.Cooldown, "Clear", function(self)
+		OnRegularCooldownChanged(self, "CLEAR")
+	end)
 
 	child.Cooldown:HookScript("OnCooldownDone", function(self, ...)
 		local parent = self:GetParent()
@@ -262,59 +288,4 @@ function Cooldowns.SetupCooldownHooks(child)
 	hooksecurefunc(child, "TriggerPandemicAlert", OnBuffTriggerPandemicAlert)
 	hooksecurefunc(child, "ShowPandemicStateFrame", OnBuffShowPandemicStateFrame)
 	hooksecurefunc(child, "HidePandemicStateFrame", OnBuffHidePandemicStateFrame)
-end
-
-function SCM:UpdateCooldownInfo(isFirstLoad, dataProvider)
-	if InCombatLockdown() then
-		return
-	end
-
-	self.defaultCooldownViewerConfig = {
-		cooldownIDs = {},
-		spellIDs = {},
-	}
-	self.currentCooldownViewerConfig = {}
-
-	local displayData = dataProvider and dataProvider.displayData.cooldownInfoByID
-	for _, cooldownCategory in pairs(CooldownViewerSettingsDataProvider_GetCategories()) do
-		self.defaultCooldownViewerConfig[cooldownCategory] = {
-			spellIDs = {},
-			cooldownIDs = {},
-		}
-
-		local cooldownIDs = C_CooldownViewer.GetCooldownViewerCategorySet(cooldownCategory, true)
-		local order = 0
-		for _, cooldownID in ipairs(cooldownIDs) do
-			local info = C_CooldownViewer.GetCooldownViewerCooldownInfo(cooldownID)
-			if info then
-				local data = displayData[cooldownID]
-				if data then
-					local spellID = data.spellID
-					self.defaultCooldownViewerConfig[cooldownCategory][data.cooldownID] = data
-					self.defaultCooldownViewerConfig[cooldownCategory].spellIDs[spellID] = data
-					self.defaultCooldownViewerConfig[cooldownCategory].cooldownIDs[data.cooldownID] = data
-					self.defaultCooldownViewerConfig.cooldownIDs[data.cooldownID] = data
-
-					self.defaultCooldownViewerConfig.spellIDs[spellID] = data
-					for _, linkedSpellID in ipairs(data.linkedSpellIDs or {}) do
-						self.defaultCooldownViewerConfig[cooldownCategory].spellIDs[linkedSpellID] = data
-						self.defaultCooldownViewerConfig.spellIDs[linkedSpellID] = data
-					end
-
-					-- Can probably be removed because I don't use it anymore.
-					if data and data.category then
-						local category = tonumber(data.category)
-						if category and category >= 0 and category <= 2 then
-							order = order + 1
-							self.currentCooldownViewerConfig[spellID] = self.currentCooldownViewerConfig[spellID] or { source = {}, anchorGroup = {} }
-							self.currentCooldownViewerConfig[spellID].source[data.category] = data.category + 1
-							self.currentCooldownViewerConfig[spellID].anchorGroup[data.category + 1] = {
-								order = order,
-							}
-						end
-					end
-				end
-			end
-		end
-	end
 end

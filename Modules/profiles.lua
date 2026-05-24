@@ -66,7 +66,7 @@ local function GetProfileExportData(db, exportType, classFileName, specID)
 	if exportType == EXPORT_TYPE_ALL then
 		local profileData = {}
 		for key, value in pairs(db) do
-			if key ~= "options" and key ~= "anchorConfig" then
+			if key ~= "options" and key ~= "anchorConfig" and key ~= "globalAnchorConfig" and key ~= "globalCustomConfig" then
 				profileData[key] = CopyValue(value)
 			end
 		end
@@ -108,8 +108,8 @@ local function BuildProfileExportPayload(self, exportType, classFileName, specID
 
 	if exportOptions.includeGlobalAnchors then
 		payload.globalAnchors = {
-			globalAnchorConfig = self.db.global.globalAnchorConfig,
-			globalCustomConfig = self.db.global.globalCustomConfig,
+			globalAnchorConfig = self.db.profile.globalAnchorConfig,
+			globalCustomConfig = self.db.profile.globalCustomConfig,
 		}
 	end
 
@@ -142,8 +142,8 @@ end
 function SCM:ExportGlobalAnchors()
 	local prefix = string.format("!SCM:%d:%d!", dataVersion, EXPORT_TYPE_GLOBAL_ANCHORS)
 	return prefix .. SCM.Encode({
-		globalAnchorConfig = self.db.global.globalAnchorConfig,
-		globalCustomConfig = self.db.global.globalCustomConfig,
+		globalAnchorConfig = self.db.profile.globalAnchorConfig,
+		globalCustomConfig = self.db.profile.globalCustomConfig,
 	})
 end
 
@@ -179,6 +179,7 @@ local function MergeConfig(destDB, sourceData, defaultAnchor)
 	destDB.spellConfig = sourceData.spellConfig
 	destDB.itemConfig = sourceData.itemConfig
 	destDB.customConfig = sourceData.customConfig or {}
+	destDB.resourceBarConfig = type(sourceData.resourceBarConfig) == "table" and sourceData.resourceBarConfig or {}
 	destDB.buffBarsAnchorConfig = type(sourceData.buffBarsAnchorConfig) == "table" and sourceData.buffBarsAnchorConfig or {}
 
 	if type(sourceData.anchorConfig) == "table" and #sourceData.anchorConfig > 0 then
@@ -348,6 +349,7 @@ function SCM:ImportProfile(profileName, importString)
 
 	self.db:RegisterDefaults(SCM.DefaultDB)
 	SCM.appliedOptions = nil
+	SCM:UpdateDB()
 	SCM:ApplyOptions()
 
 	SCM.RefreshCooldownViewerData(true)
@@ -362,22 +364,22 @@ function SCM:ImportGlobalAnchors(importString)
 end
 
 function SCM:ImportGlobalAnchorsFromData(data)
-	local previousAnchorCount = #self.db.global.globalAnchorConfig
+	local previousAnchorCount = #self.db.profile.globalAnchorConfig
 	local anchors, customConfig = GetImportedGlobalAnchorData(data)
 
 	if anchors then
-		self.db.global.globalAnchorConfig = anchors
+		self.db.profile.globalAnchorConfig = anchors
 	end
 
 	if customConfig then
 		for _, key in ipairs(GLOBAL_CUSTOM_CONFIG_KEYS) do
 			if customConfig[key] then
-				self.db.global.globalCustomConfig[key] = customConfig[key]
+				self.db.profile.globalCustomConfig[key] = customConfig[key]
 			end
 		end
 	end
 
-	local currentAnchorCount = #self.db.global.globalAnchorConfig
+	local currentAnchorCount = #self.db.profile.globalAnchorConfig
 	for index = currentAnchorCount + 1, previousAnchorCount do
 		local globalGroup = self.Utils.ToGlobalGroup(index)
 		local anchorFrame = SCM:GetAnchor(globalGroup)
@@ -397,6 +399,7 @@ function SCM:ImportGlobalSettingsFromData(data)
 
 	self.db:RegisterDefaults(SCM.DefaultDB)
 	SCM.appliedOptions = nil
+	SCM:UpdateDB()
 	SCM:ApplyOptions()
 
 	SCM.RefreshCooldownViewerData(true)

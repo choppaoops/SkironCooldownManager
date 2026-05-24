@@ -13,7 +13,7 @@ local function CreateCustomConfigTables(customConfig)
 	customConfig.slotConfig = GetOrCreateTableEntry(customConfig, "slotConfig")
 	customConfig.timerConfig = GetOrCreateTableEntry(customConfig, "timerConfig")
 
-	local allowedKeys = SCM.DefaultDB.global.globalCustomConfig
+	local allowedKeys = SCM.DefaultDB.profile.globalCustomConfig
 	for key in pairs(customConfig) do
 		if not allowedKeys[key] then
 			customConfig[key] = nil
@@ -52,8 +52,7 @@ local function NormalizeTrackedBarSpellConfig(spellConfig)
 			local trackedBarGroup = config.source[Enum.CooldownViewerCategory.TrackedBar]
 			local normalizedTrackedBarGroup = Utils.NormalizeBuffBarGroup(trackedBarGroup)
 			local legacyGroup = normalizedTrackedBarGroup and (normalizedTrackedBarGroup - 200)
-			local groupConfig = (trackedBarGroup and config.anchorGroup[trackedBarGroup])
-				or (legacyGroup and config.anchorGroup[legacyGroup])
+			local groupConfig = (trackedBarGroup and config.anchorGroup[trackedBarGroup]) or (legacyGroup and config.anchorGroup[legacyGroup])
 
 			if trackedBarGroup ~= normalizedTrackedBarGroup then
 				config.source[Enum.CooldownViewerCategory.TrackedBar] = normalizedTrackedBarGroup
@@ -74,7 +73,78 @@ local function NormalizeTrackedBarSpellConfig(spellConfig)
 	end
 end
 
+local function CreateSpecFallbackConfig(config, specConfig, isActive, setSpecConfig)
+	config = config or {}
+	setSpecConfig = setSpecConfig or nop
+
+	isActive = isActive or function()
+		return specConfig and specConfig.active
+	end
+
+	local function SaveSpecConfig()
+		specConfig = specConfig or {}
+		setSpecConfig(specConfig)
+		setSpecConfig = nop
+		return specConfig
+	end
+
+	local function CreateChildConfig(key)
+		local function SaveChildConfig(childConfig)
+			SaveSpecConfig()[key] = childConfig
+		end
+
+		return CreateSpecFallbackConfig(config[key], specConfig and specConfig[key], isActive, SaveChildConfig)
+	end
+
+	local metatable = {
+		__index = function(_, key)
+			if key == "active" then
+				return isActive()
+			end
+
+			if not isActive() then
+				return config[key]
+			end
+
+			local value = specConfig and specConfig[key]
+			if value == nil then
+				value = config[key]
+			end
+
+			if type(value) == "table" then
+				return CreateChildConfig(key)
+			end
+
+			return value
+		end,
+		__newindex = function(_, key, value)
+			if key == "active" then
+				SaveSpecConfig()[key] = value
+			elseif isActive() then
+				if IsShiftKeyDown() then
+					if specConfig then
+						specConfig[key] = nil
+					end
+				else
+					SaveSpecConfig()[key] = value
+				end
+			else
+				config[key] = value
+			end
+		end,
+	}
+
+	return setmetatable({}, metatable)
+end
+
 function SCM:UpdateDB()
+	self:MigrateLegacyGlobalConfigToProfiles()
+
+	local options = self.db.profile.options
+	if not options.cooldownBreakpoints or #options.cooldownBreakpoints == 0 then
+		options.cooldownBreakpoints = CopyTable(self.Constants.CooldownTimer.DefaultBreakpoints)
+	end
+
 	local firstGlobalGroup = SCM.Utils.ToGlobalGroup(1)
 	local firstBuffBarGroup = SCM.Utils.ToBuffBarGroup(1)
 	local class = Utils.GetClass()
@@ -86,6 +156,8 @@ function SCM:UpdateDB()
 	local specBuffBarsAnchorConfig = currentConfig and currentConfig.buffBarsAnchorConfig and currentConfig.buffBarsAnchorConfig[specID]
 	local specSpellConfig = currentConfig and currentConfig.spellConfig[specID]
 	local specCustomConfig = currentConfig and currentConfig.customConfig and currentConfig.customConfig[specID]
+	local specResourceBarConfig = currentConfig and currentConfig.resourceBarConfig and currentConfig.resourceBarConfig[specID]
+	local specCastBarConfig = currentConfig and currentConfig.castBarConfig and currentConfig.castBarConfig[specID]
 
 	self.db.profile[class] = self.db.profile[class] or {}
 	self.db.profile[class][specID] = self.db.profile[class][specID]
@@ -94,6 +166,8 @@ function SCM:UpdateDB()
 			buffBarsAnchorConfig = CopyTable(specBuffBarsAnchorConfig or self.DB.defaultBuffBarsAnchorConfig),
 			spellConfig = specSpellConfig or {},
 			customConfig = specCustomConfig or {},
+			resourceBarConfig = specResourceBarConfig or {},
+			castBarConfig = specCastBarConfig or {},
 		}
 
 	self.currentConfig = self.db.profile[class][specID]
@@ -106,14 +180,23 @@ function SCM:UpdateDB()
 	self.currentConfig.customConfig = self.currentConfig.customConfig or {}
 	self.customConfig = CreateCustomConfigTables(self.currentConfig.customConfig)
 
+	self.currentConfig.resourceBarConfig = self.currentConfig.resourceBarConfig or {}
+	self.specResourceBarConfig = self.currentConfig.resourceBarConfig
+	self.resourceBarConfig = CreateSpecFallbackConfig(options.resourceBar, self.currentConfig.resourceBarConfig)
+
+	self.currentConfig.castBarConfig = self.currentConfig.castBarConfig or {}
+	self.specCastBarConfig = self.currentConfig.castBarConfig
+	self.castBarConfig = CreateSpecFallbackConfig(options.castBar, self.currentConfig.castBarConfig)
+
 	self.currentConfig.buffBarsAnchorConfig = self.currentConfig.buffBarsAnchorConfig or {}
 	self.buffBarsAnchorConfig = CreateAnchorConfigTables(self.currentConfig.buffBarsAnchorConfig)
 
-	self.globalAnchorConfig = self.db.global.globalAnchorConfig
-	self.globalCustomConfig = CreateCustomConfigTables(self.db.global.globalCustomConfig)
+	self.globalAnchorConfig = self.db.profile.globalAnchorConfig
+	self.globalCustomConfig = CreateCustomConfigTables(self.db.profile.globalCustomConfig)
 	self:RemoveOldAnchorConfigs(self.currentConfig, self.globalAnchorConfig, self.globalCustomConfig)
 
 	self.isHideWhenInactiveEnabled = self:GetHideWhenInactive() == 1
+	self.showTooltips = self:GetShowTooltip() == 1
 	self.currentClass = class
 	self.currentSpecID = specID
 	self.currentRole = role

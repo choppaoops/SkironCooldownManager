@@ -40,7 +40,7 @@ end
 
 local function OnCooldownViewerSettingsRefreshLayout(self)
 	SCM:ClearChildrenCache()
-	SCM:UpdateCooldownInfo(true, self:GetDataProvider())
+	SCM:UpdateCooldownInfo(true)
 	SCM:UpdateDB()
 	SCM:ApplyAllCDManagerConfigs()
 end
@@ -87,7 +87,7 @@ end
 local function RefreshCooldownViewerData(releaseCustomIcons)
 	SCM:InvalidateAnchorLinks()
 	SCM:ClearViewerChildrenCache()
-	SCM:UpdateCooldownInfo(true, CooldownViewerSettings:GetDataProvider())
+	SCM:UpdateCooldownInfo(true)
 	SCM:UpdateDB()
 
 	if releaseCustomIcons then
@@ -120,7 +120,7 @@ end
 function SCM:PLAYER_ENTERING_WORLD(isInitialLogin, isReload)
 	if isInitialLogin or isReload then
 		--SCM.Cache.cachedViewerScale = SCM:PixelPerfect()
-		SCM:UpdateCooldownInfo(true, CooldownViewerSettings:GetDataProvider())
+		SCM:UpdateCooldownInfo(true)
 		SCM:UpdateDB()
 
 		SCM:CreateAllCustomIcons()
@@ -145,11 +145,42 @@ function SCM:UNIT_SPELLCAST_SUCCEEDED(_, _, spellID)
 	SCM:ApplySuccessfulCastBySpellID(spellID)
 end
 
-function SCM:SPELL_UPDATE_COOLDOWN(spellID)
-	local predicate = function(config)
-		return config.spellID == spellID or config.iconType == "item"
+local isSpellCooldownUpdateThrottled = false
+local pendingSpellCooldownIDs = {}
+
+local function PendingSpellCooldownPredicate(config)
+	return pendingSpellCooldownIDs[config.spellID]
+end
+
+local function OnSpellCooldownUpdateThrottleTick()
+	if not next(pendingSpellCooldownIDs) then
+		isSpellCooldownUpdateThrottled = false
+		return
 	end
 
+	isSpellCooldownUpdateThrottled = true
+	C_Timer.After(0.1, OnSpellCooldownUpdateThrottleTick)
+	SCM:ApplyAnchorGroupByIconTypes(false, PendingSpellCooldownPredicate, "spell", "item", "slot")
+	SCM:UpdateCustomIconsGCD()
+	wipe(pendingSpellCooldownIDs)
+end
+
+function SCM:SPELL_UPDATE_COOLDOWN(spellID)
+	if not spellID then
+		return
+	end
+
+	if isSpellCooldownUpdateThrottled then
+		pendingSpellCooldownIDs[spellID] = true
+		return
+	end
+
+	local predicate = function(config)
+		return config.spellID == spellID
+	end
+
+	isSpellCooldownUpdateThrottled = true
+	C_Timer.After(0.1, OnSpellCooldownUpdateThrottleTick)
 	SCM:ApplyAnchorGroupByIconTypes(false, predicate, "spell", "item", "slot")
 	SCM:UpdateCustomIconsGCD()
 end
@@ -166,15 +197,19 @@ function SCM:SPELL_UPDATE_CHARGES()
 	SCM:ApplyAnchorGroupByIconTypes(false, nil, "spell")
 end
 
+function SCM:SPELL_UPDATE_USES(spellID, baseSpellID)
+	SCM.CustomIcons.UpdateSpellUses(spellID, baseSpellID)
+end
+
 function SCM:PLAYER_EQUIPMENT_CHANGED()
-	SCM:CreateAllCustomIcons()
-	SCM:ApplyAllCDManagerConfigs()
+	SCM:CreateAllCustomIcons("slot")
+	SCM:ApplyAnchorGroupByIconType("slot")
 end
 
 function SCM:PLAYER_EQUIPED_SPELLS_CHANGED()
 	C_Timer.After(0.1, function()
 		SCM:CreateAllCustomIcons("slot")
-		SCM:ApplyAllCDManagerConfigs()
+		SCM:ApplyAnchorGroupByIconType("slot")
 	end)
 
 	eventFrame:UnregisterEvent("PLAYER_EQUIPED_SPELLS_CHANGED")
@@ -182,6 +217,7 @@ end
 
 function SCM:PLAYER_REGEN_ENABLED()
 	if not self.appliedOptions then
+		self:UpdateDB()
 		self:ApplyOptions()
 	end
 
@@ -191,6 +227,7 @@ end
 function SCM:PLAYER_REGEN_DISABLED() end
 
 function SCM:EDIT_MODE_LAYOUTS_UPDATED()
+	SCM:UpdateDB()
 	SCM:ApplyOptions()
 end
 
@@ -207,6 +244,17 @@ function SCM:TRAIT_CONFIG_UPDATED()
 end
 
 function SCM:ACTIVE_PLAYER_SPECIALIZATION_CHANGED()
+	for _, viewerName in ipairs({ "EssentialCooldownViewer", "UtilityCooldownViewer", "BuffIconCooldownViewer", "BuffBarCooldownViewer" }) do
+		local viewer = _G[viewerName]
+		if viewer then
+			local children = SCM.Cache.cachedViewerChildren[viewer] or { viewer:GetChildren() }
+			for _, child in ipairs(children) do
+				SCM.Utils.ResetChildSCMState(child)
+			end
+			SCM:InvalidateViewerChildrenCache(viewer)
+		end
+	end
+
 	C_Timer.After(0.5, function()
 		RefreshCooldownViewerData(true)
 		SCM:RefreshResourceBarConfig()
@@ -254,6 +302,7 @@ local function OnProfileChanged(_, _, _, skipReset)
 	end
 
 	SCM:InvalidateAnchorLinks()
+	SCM:UpdateDB()
 
 	SCM.appliedOptions = nil
 	SCM:ApplyOptions()
@@ -295,6 +344,7 @@ EventUtil.ContinueOnAddOnLoaded(addonName, function()
 	eventFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
 	eventFrame:RegisterEvent("SPELL_UPDATE_COOLDOWN")
 	eventFrame:RegisterEvent("SPELL_UPDATE_CHARGES")
+	eventFrame:RegisterEvent("SPELL_UPDATE_USES")
 	eventFrame:RegisterEvent("SPELL_UPDATE_USABLE")
 	eventFrame:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
 	eventFrame:RegisterEvent("COOLDOWN_VIEWER_SPELL_OVERRIDE_UPDATED")
@@ -333,4 +383,45 @@ end
 function SCM:GetConfigTableByID(configID, iconType, isGlobal)
 	local configTable = self:GetConfigTable(iconType, isGlobal)
 	return configTable and configTable[configID]
+end
+
+function SCM:UpdateCooldownInfo(isFirstLoad)
+	if InCombatLockdown() then
+		return
+	end
+
+	self.defaultCooldownViewerConfig = {
+		cooldownIDs = {},
+		spellIDs = {},
+	}
+
+	local dataProvider = CooldownViewerSettings:GetDataProvider()
+	local displayData = dataProvider and dataProvider.displayData.cooldownInfoByID
+	for _, cooldownCategory in pairs(CooldownViewerSettingsDataProvider_GetCategories()) do
+		self.defaultCooldownViewerConfig[cooldownCategory] = {
+			spellIDs = {},
+			cooldownIDs = {},
+		}
+
+		local cooldownIDs = C_CooldownViewer.GetCooldownViewerCategorySet(cooldownCategory, true)
+		for _, cooldownID in ipairs(cooldownIDs) do
+			local info = C_CooldownViewer.GetCooldownViewerCooldownInfo(cooldownID)
+			if info then
+				local data = displayData[cooldownID]
+				if data then
+					local spellID = data.spellID
+					self.defaultCooldownViewerConfig[cooldownCategory][data.cooldownID] = data
+					self.defaultCooldownViewerConfig[cooldownCategory].spellIDs[spellID] = data
+					self.defaultCooldownViewerConfig[cooldownCategory].cooldownIDs[data.cooldownID] = data
+					self.defaultCooldownViewerConfig.cooldownIDs[data.cooldownID] = data
+
+					self.defaultCooldownViewerConfig.spellIDs[spellID] = data
+					for _, linkedSpellID in ipairs(data.linkedSpellIDs or {}) do
+						self.defaultCooldownViewerConfig[cooldownCategory].spellIDs[linkedSpellID] = data
+						self.defaultCooldownViewerConfig.spellIDs[linkedSpellID] = data
+					end
+				end
+			end
+		end
+	end
 end

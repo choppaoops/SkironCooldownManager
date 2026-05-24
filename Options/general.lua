@@ -2,6 +2,7 @@ local SCM = select(2, ...)
 local AceGUI = LibStub("AceGUI-3.0")
 local LibEditModeOverride = LibStub("LibEditModeOverride-1.0")
 local LSM = LibStub("LibSharedMedia-3.0")
+local LibWindow = LibStub("LibWindow-1.1")
 
 SCM.MainTabs.General = { value = "General", text = "Global Settings", order = 1, subgroups = {} }
 
@@ -160,6 +161,39 @@ local function AddCustomGlowOptions(dynamicGlowSettingsGroup)
 	end
 end
 
+local function GetCooldownBreakpointComponents(displayStyle, minValue)
+	if displayStyle == "clock" then
+		if minValue >= 86400 then
+			return {
+				{ div = 86400 },
+				{ div = 3600, mod = 24 },
+			}
+		elseif minValue >= 3600 then
+			return {
+				{ div = 3600 },
+				{ div = 60, mod = 60 },
+			}
+		else
+			return {
+				{ div = 60 },
+				{ mod = 60 },
+			}
+		end
+	elseif displayStyle == "minutes" then
+		return {
+			{ div = 60 },
+		}
+	elseif displayStyle == "hours" then
+		return {
+			{ div = 3600 },
+		}
+	elseif displayStyle == "days" then
+		return {
+			{ div = 86400 },
+		}
+	end
+end
+
 local function SelectGlobalSettingsTab(tabWidget, group, options)
 	tabWidget:ReleaseChildren()
 
@@ -167,11 +201,11 @@ local function SelectGlobalSettingsTab(tabWidget, group, options)
 		local skinningSettings = AceGUI:Create("InlineGroup")
 		skinningSettings:SetLayout("flow")
 		skinningSettings:SetFullWidth(true)
-		skinningSettings:SetTitle("Skinning")
+		skinningSettings:SetTitle("General")
 		tabWidget:AddChild(skinningSettings)
 
 		local enableSkinning = AceGUI:Create("CheckBox")
-		enableSkinning:SetRelativeWidth(0.5)
+		enableSkinning:SetRelativeWidth(0.33)
 		enableSkinning:SetLabel("Enable Skinning")
 		enableSkinning:SetValue(options.enableSkinning)
 		enableSkinning:SetCallback("OnValueChanged", function(_, _, value)
@@ -181,11 +215,10 @@ local function SelectGlobalSettingsTab(tabWidget, group, options)
 
 		local showAnchorHighlight = AceGUI:Create("CheckBox")
 		showAnchorHighlight:SetValue(options.showAnchorHighlight)
-		showAnchorHighlight:SetRelativeWidth(0.5)
+		showAnchorHighlight:SetRelativeWidth(0.33)
 		showAnchorHighlight:SetLabel("Show Anchor Highlight")
 		showAnchorHighlight:SetCallback("OnValueChanged", function(self, event, value)
 			options.showAnchorHighlight = value
-			--
 			if value and SCM.OptionsFrame then
 				for _, anchorFrame in pairs(SCM.anchorFrames) do
 					anchorFrame.debugTexture:Show()
@@ -199,6 +232,26 @@ local function SelectGlobalSettingsTab(tabWidget, group, options)
 			end
 		end)
 		skinningSettings:AddChild(showAnchorHighlight)
+
+		local savePosition = AceGUI:Create("CheckBox")
+		savePosition:SetRelativeWidth(0.33)
+		savePosition:SetLabel("Save Option Window Position")
+		savePosition:SetValue(options.savePosition)
+		savePosition:SetCallback("OnValueChanged", function(_, _, value)
+			options.savePosition = value
+		end)
+		skinningSettings:AddChild(savePosition)
+
+		local menuScale = AceGUI:Create("Slider")
+		menuScale:SetRelativeWidth(1)
+		menuScale:SetLabel("Options Scale")
+		menuScale:SetSliderValues(0.5, 2, 0.1)
+		menuScale:SetValue(options.menuScale)
+		menuScale:SetCallback("OnMouseUp", function(_, _, value)
+			options.menuScale = value
+			LibWindow.SetScale(SCM.OptionsFrame.frame, value)
+		end)
+		skinningSettings:AddChild(menuScale)
 
 		local visibilitySettings = AceGUI:Create("InlineGroup")
 		visibilitySettings:SetLayout("flow")
@@ -431,7 +484,7 @@ local function SelectGlobalSettingsTab(tabWidget, group, options)
 		tabWidget:AddChild(iconSettings)
 
 		local iconZoom = AceGUI:Create("Slider")
-		iconZoom:SetRelativeWidth(0.5)
+		iconZoom:SetRelativeWidth(0.25)
 		iconZoom:SetValue(options.iconZoom or 1)
 		iconZoom:SetLabel("Zoom")
 		iconZoom:SetSliderValues(0.01, 0.4, 0.01)
@@ -443,7 +496,7 @@ local function SelectGlobalSettingsTab(tabWidget, group, options)
 		iconSettings:AddChild(iconZoom)
 
 		local iconFrameStrata = AceGUI:Create("Dropdown")
-		iconFrameStrata:SetRelativeWidth(0.5)
+		iconFrameStrata:SetRelativeWidth(0.25)
 		iconFrameStrata:SetLabel("Frame Strata")
 		iconFrameStrata:SetList(SCM.Constants.FrameStrata, SCM.Constants.FrameStrataSorted)
 		iconFrameStrata:SetValue(options.iconFrameStrata or "")
@@ -452,6 +505,32 @@ local function SelectGlobalSettingsTab(tabWidget, group, options)
 			SCM:ApplyAllCDManagerConfigs()
 		end)
 		iconSettings:AddChild(iconFrameStrata)
+
+		local keepIconSquareRatio = AceGUI:Create("CheckBox")
+		keepIconSquareRatio:SetRelativeWidth(0.25)
+		keepIconSquareRatio:SetLabel("Keep Icon Square Ratio")
+		keepIconSquareRatio:SetValue(options.keepIconSquareRatio)
+		keepIconSquareRatio:SetCallback("OnValueChanged", function(_, _, value)
+			options.keepIconSquareRatio = value
+			SCM:ApplyAllCDManagerConfigs()
+		end)
+		iconSettings:AddChild(keepIconSquareRatio)
+
+		local experimentalPixelSettings  = AceGUI:Create("CheckBox")
+		experimentalPixelSettings:SetRelativeWidth(0.25)
+		experimentalPixelSettings:SetLabel("Experimental Skinning")
+		experimentalPixelSettings:SetValue(options.experimentalPixelSettings)
+		experimentalPixelSettings:SetCallback("OnValueChanged", function(_, _, value)
+			options.experimentalPixelSettings = value
+			SCM:ApplyAllCDManagerConfigs()
+		end)
+		iconSettings:AddChild(experimentalPixelSettings)
+
+		local borderSettings = AceGUI:Create("InlineGroup")
+		borderSettings:SetLayout("flow")
+		borderSettings:SetFullWidth(true)
+		borderSettings:SetTitle("Border")
+		tabWidget:AddChild(borderSettings)
 
 		local borderSize = AceGUI:Create("Slider")
 		borderSize:SetRelativeWidth(0.5)
@@ -464,7 +543,7 @@ local function SelectGlobalSettingsTab(tabWidget, group, options)
 			SCM:UpdateCastBar()
 			SCM:ApplyAllCDManagerConfigs()
 		end)
-		iconSettings:AddChild(borderSize)
+		borderSettings:AddChild(borderSize)
 
 		local borderColor = AceGUI:Create("ColorPicker")
 		borderColor:SetRelativeWidth(0.5)
@@ -477,7 +556,7 @@ local function SelectGlobalSettingsTab(tabWidget, group, options)
 			options.borderColor = { r = r, g = g, b = b, a = a }
 			SCM:ApplyAllCDManagerConfigs()
 		end)
-		iconSettings:AddChild(borderColor)
+		borderSettings:AddChild(borderColor)
 
 		local chargeSettings = AceGUI:Create("InlineGroup")
 		chargeSettings:SetLayout("flow")
@@ -568,7 +647,7 @@ local function SelectGlobalSettingsTab(tabWidget, group, options)
 		local cooldownTextSettings = AceGUI:Create("InlineGroup")
 		cooldownTextSettings:SetLayout("flow")
 		cooldownTextSettings:SetFullWidth(true)
-		cooldownTextSettings:SetTitle("Cooldown Text")
+		cooldownTextSettings:SetTitle("Cooldown Font")
 		tabWidget:AddChild(cooldownTextSettings)
 
 		local enableCooldownFont = AceGUI:Create("CheckBox")
@@ -652,6 +731,158 @@ local function SelectGlobalSettingsTab(tabWidget, group, options)
 			options.cooldownYOffset = value
 		end)
 		cooldownTextSettings:AddChild(cooldownYOffset)
+
+		local cooldownTimerSettings = AceGUI:Create("InlineGroup")
+		cooldownTimerSettings:SetLayout("flow")
+		cooldownTimerSettings:SetFullWidth(true)
+		cooldownTimerSettings:SetTitle("Cooldown Timer")
+		tabWidget:AddChild(cooldownTimerSettings)
+
+		local Constants = SCM.Constants.CooldownTimer
+		local breakpoints = options.cooldownBreakpoints
+		local breakpointTabsTbl = {}
+		for i = 1, #breakpoints do
+			breakpointTabsTbl[i] = { value = i, text = "Breakpoint " .. i }
+		end
+
+		local breakpointTabs = AceGUI:Create("TabGroup")
+		breakpointTabs:SetLayout("flow")
+		breakpointTabs:SetFullWidth(true)
+		breakpointTabs:SetTabs(breakpointTabsTbl)
+		breakpointTabs:SetCallback("OnGroupSelected", function(self, event, breakpointIndex)
+			self:ReleaseChildren()
+
+			breakpoints = options.cooldownBreakpoints
+			local selectedBreakpoint = breakpoints[breakpointIndex]
+
+			local breakpointButtonGroup = AceGUI:Create("SimpleGroup")
+			breakpointButtonGroup:SetFullWidth(true)
+			breakpointButtonGroup:SetLayout("flow")
+			self:AddChild(breakpointButtonGroup)
+
+			local addBreakpointButton = AceGUI:Create("Button")
+			addBreakpointButton:SetText("Add Breakpoint")
+			addBreakpointButton:SetRelativeWidth(0.5)
+			addBreakpointButton:SetCallback("OnClick", function()
+				local breakpoint = CopyTable(Constants.DisplayStyleSettings.seconds)
+				breakpoint.threshold = 5
+				breakpoint.displayStyle = "seconds"
+				breakpoint.components = GetCooldownBreakpointComponents(breakpoint.displayStyle, breakpoint.threshold)
+				breakpoints[#breakpoints + 1] = breakpoint
+				breakpointIndex = #breakpoints
+				SCM.Cooldowns:ApplyFormatterSettings()
+
+				breakpointTabsTbl = {}
+				for i = 1, #breakpoints do
+					breakpointTabsTbl[i] = { value = i, text = "Breakpoint " .. i }
+				end
+				self:SetTabs(breakpointTabsTbl)
+				self:SelectTab(breakpointIndex)
+			end)
+			breakpointButtonGroup:AddChild(addBreakpointButton)
+
+			local removeBreakpointButton = AceGUI:Create("Button")
+			removeBreakpointButton:SetText("Remove Breakpoint")
+			removeBreakpointButton:SetRelativeWidth(0.5)
+			removeBreakpointButton:SetDisabled(#breakpoints <= 1)
+			removeBreakpointButton:SetCallback("OnClick", function()
+				tremove(breakpoints, breakpointIndex)
+
+				if breakpointIndex > #breakpoints then
+					breakpointIndex = #breakpoints
+				end
+				SCM.Cooldowns:ApplyFormatterSettings()
+
+				breakpointTabsTbl = {}
+				for i = 1, #breakpoints do
+					breakpointTabsTbl[i] = { value = i, text = "Breakpoint " .. i }
+				end
+				self:SetTabs(breakpointTabsTbl)
+				self:SelectTab(breakpointIndex)
+			end)
+			breakpointButtonGroup:AddChild(removeBreakpointButton)
+
+			local minValueInput = AceGUI:Create("EditBox")
+			minValueInput:SetRelativeWidth(0.33)
+			minValueInput:SetLabel("Min Value (in seconds)")
+			minValueInput:SetText(tostring(selectedBreakpoint.threshold or 0))
+			minValueInput:SetCallback("OnEnterPressed", function(input, _, text)
+				local value = tonumber(text)
+				if not value then
+					input:SetText(tostring(selectedBreakpoint.threshold or 0))
+					return
+				end
+
+				local displayStyle = selectedBreakpoint.displayStyle
+				local styleSettings = Constants.DisplayStyleSettings[displayStyle]
+				selectedBreakpoint.threshold = value
+				selectedBreakpoint.step = styleSettings.step
+				selectedBreakpoint.rounding = styleSettings.rounding
+				selectedBreakpoint.format = styleSettings.format
+				selectedBreakpoint.components = GetCooldownBreakpointComponents(displayStyle, value)
+
+				SCM.Cooldowns:ApplyFormatterSettings()
+			end)
+			self:AddChild(minValueInput)
+
+			local displayStyle = selectedBreakpoint.displayStyle
+
+			local breakpointDisplayStyle = AceGUI:Create("Dropdown")
+			breakpointDisplayStyle:SetRelativeWidth(0.33)
+			breakpointDisplayStyle:SetLabel("Display Style")
+			breakpointDisplayStyle:SetList(Constants.DisplayStyle[1], Constants.DisplayStyle[2])
+			breakpointDisplayStyle:SetValue(displayStyle)
+			breakpointDisplayStyle:SetCallback("OnValueChanged", function(_, _, value)
+				local styleSettings = Constants.DisplayStyleSettings[value]
+
+				selectedBreakpoint.displayStyle = value
+				selectedBreakpoint.step = styleSettings.step
+				selectedBreakpoint.rounding = styleSettings.rounding
+
+				if selectedBreakpoint.color then
+					selectedBreakpoint.format = CreateColor(unpack(selectedBreakpoint.color)):WrapTextInColorCode(C_StringUtil.StripHyperlinks(selectedBreakpoint.format))
+				else
+					selectedBreakpoint.format = styleSettings.format
+				end
+				selectedBreakpoint.components = GetCooldownBreakpointComponents(value, selectedBreakpoint.threshold or 0)
+
+				SCM.Cooldowns:ApplyFormatterSettings()
+			end)
+			self:AddChild(breakpointDisplayStyle)
+
+			local breakpointColor = AceGUI:Create("ColorPicker")
+			breakpointColor:SetRelativeWidth(0.33)
+			breakpointColor:SetLabel("Color")
+			breakpointColor:SetColor(unpack(selectedBreakpoint.color or { 1, 1, 1, 1 }))
+			breakpointColor:SetCallback("OnValueChanged", function(_, _, r, g, b, a)
+				selectedBreakpoint.color = { r, g, b, a }
+				selectedBreakpoint.format = CreateColor(r, g, b, a):WrapTextInColorCode(C_StringUtil.StripHyperlinks(selectedBreakpoint.format))
+
+				SCM.Cooldowns:ApplyFormatterSettings()
+			end)
+			self:AddChild(breakpointColor)
+		end)
+		breakpointTabs:SelectTab(1)
+		cooldownTimerSettings:AddChild(breakpointTabs)
+
+		local cooldownTimerTestEditBox = AceGUI:Create("EditBox")
+		cooldownTimerTestEditBox:SetRelativeWidth(0.5)
+		cooldownTimerTestEditBox:SetText("")
+		cooldownTimerTestEditBox:SetLabel("Enter Test Duration")
+		cooldownTimerSettings:AddChild(cooldownTimerTestEditBox)
+
+		local cooldownTimerTestResult = AceGUI:Create("Label")
+		cooldownTimerTestResult:SetRelativeWidth(0.5)
+		cooldownTimerTestResult:SetText("Output: (No Input)")
+		cooldownTimerSettings:AddChild(cooldownTimerTestResult)
+
+		cooldownTimerTestEditBox:SetCallback("OnEnterPressed", function(_, _, value)
+			if tonumber(value) then
+				cooldownTimerTestResult:SetText(string.format("Output: %s", SCM.Cooldowns.NumericRuleFormatter:FormatNumber(tonumber(value))))
+			else
+				cooldownTimerTestResult:SetText("Output: (Invalid Input)")
+			end
+		end)
 	elseif group == "Glow" then
 		local glowSettings = AceGUI:Create("InlineGroup")
 		glowSettings:SetLayout("flow")
@@ -712,6 +943,25 @@ local function SelectGlobalSettingsTab(tabWidget, group, options)
 		pandemicGlowSettings:AddChild(pandemicGlowOption)
 	elseif group == "BuffBar" then
 		local buffBarOptions = options.buffBarOptions
+
+		local generalSettings = AceGUI:Create("InlineGroup")
+		generalSettings:SetLayout("flow")
+		generalSettings:SetFullWidth(true)
+		generalSettings:SetTitle("General")
+		tabWidget:AddChild(generalSettings)
+
+		local buffBarContent = AceGUI:Create("Dropdown")
+		buffBarContent:SetList(SCM.Constants.BuffBarContent)
+		buffBarContent:SetRelativeWidth(0.5)
+		buffBarContent:SetLabel("Bar Type")
+		buffBarContent:SetValue(options.buffBarContent)
+		buffBarContent:SetCallback("OnValueChanged", function(_, _, value)
+			options.buffBarContent = value
+
+			SCM:SetBuffBarContent(value)
+			SCM:SkinBuffBars()
+		end)
+		generalSettings:AddChild(buffBarContent)
 
 		local textureSettings = AceGUI:Create("InlineGroup")
 		textureSettings:SetLayout("flow")
@@ -827,6 +1077,8 @@ local function SelectGlobalSettingsTab(tabWidget, group, options)
 		end)
 		fontSettings:AddChild(fontOutline)
 	end
+
+	tabWidget:DoLayout()
 end
 
 local function General(self, frame, group)
@@ -856,7 +1108,7 @@ local function General(self, frame, group)
 	local globalSettingsTabs = AceGUI:Create("TabGroup")
 	globalSettingsTabs:SetTabs(SCM.Defaults.GlobalSettingsTabs)
 	globalSettingsTabs:SetFullWidth(true)
-	globalSettingsTabs:SetFullHeight(true)
+	--globalSettingsTabs:SetFullHeight(true)
 	globalSettingsTabs:SetLayout("flow")
 	globalSettingsTabs:SetCallback("OnGroupSelected", function(self, event, group)
 		SelectGlobalSettingsTab(self, group, options)

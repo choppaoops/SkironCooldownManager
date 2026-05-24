@@ -171,10 +171,6 @@ end
 local function CastBar(self)
 	self:ReleaseChildren()
 
-	local options = SCM.db.profile.options.castBar
-	local iconOptions = options.icon
-	local tickOptions = options.ticks
-
 	local rootGroup = AceGUI:Create("InlineGroup")
 	rootGroup:SetLayout("fill")
 	rootGroup:SetFullWidth(true)
@@ -195,6 +191,75 @@ local function CastBar(self)
 	label:SetText("|TInterface\\common\\help-i:40:40:0:0|tRight now the cast bar is still in an experimental state. Please report any bugs on github/curseforge or on discord.")
 	label:SetFontObject("Game12Font")
 	scrollFrame:AddChild(label)
+
+	local statusGroup = AceGUI:Create("InlineGroup")
+	statusGroup:SetFullWidth(true)
+	statusGroup:SetLayout("flow")
+	scrollFrame:AddChild(statusGroup)
+
+	local currentStatus = AceGUI:Create("Label")
+	currentStatus:SetRelativeWidth(0.33)
+	currentStatus:SetJustifyH("LEFT")
+	currentStatus:SetJustifyV("MIDDLE")
+	currentStatus:SetFontObject("Game15Font")
+	statusGroup:AddChild(currentStatus)
+
+	if SCM.castBarConfig.active then
+		currentStatus:SetText(string.format("Status: |cffea00ffSpecialization|r (%s)", (select(2, SCM.Utils.GetSpec()))))
+	else
+		currentStatus:SetText("Status: |cfffcf803Profile|r")
+	end
+
+	local modifyCurrentSpecialization = AceGUI:Create("CheckBox")
+	modifyCurrentSpecialization:SetRelativeWidth(0.33)
+	modifyCurrentSpecialization:SetLabel("Use Specialization Config")
+	modifyCurrentSpecialization:SetValue(SCM.castBarConfig.active)
+	statusGroup:AddChild(modifyCurrentSpecialization)
+
+	local resetCurrentSpecialization = AceGUI:Create("Button")
+	resetCurrentSpecialization:SetText("Clear Spec Config")
+	resetCurrentSpecialization:SetRelativeWidth(0.33)
+	resetCurrentSpecialization:SetDisabled(not SCM.castBarConfig.active)
+	resetCurrentSpecialization:SetCallback("OnEnter", function()
+		GameTooltip:SetOwner(self.frame, "ANCHOR_CURSOR")
+		GameTooltip:SetText("Clear Spec Config", nil, nil, nil, nil, true)
+		GameTooltip:AddLine("This will clear the spec config and fall back to the normal resource bar options.", 1, 1, 1, true)
+		GameTooltip:Show()
+	end)
+	resetCurrentSpecialization:SetCallback("OnLeave", function()
+		GameTooltip:Hide()
+	end)
+	statusGroup:AddChild(resetCurrentSpecialization)
+
+	resetCurrentSpecialization:SetCallback("OnClick", function()
+		local specCastBarConfig = SCM.specCastBarConfig
+		local isActive = specCastBarConfig.active
+
+		wipe(specCastBarConfig)
+		specCastBarConfig.active = isActive
+
+		CastBar(self)
+		RefreshCastBar()
+	end)
+
+	modifyCurrentSpecialization:SetCallback("OnValueChanged", function(_, _, value)
+		SCM.castBarConfig.active = value
+
+		if value then
+			currentStatus:SetText(string.format("Status: |cffea00ffSpecialization|r (%s)", (select(2, SCM.Utils.GetSpec()))))
+		else
+			currentStatus:SetText("Status: |cfffcf803Profile|r")
+		end
+
+		CastBar(self)
+		resetCurrentSpecialization:SetDisabled(not value)
+		RefreshCastBar()
+	end)
+
+	local options = SCM.castBarConfig
+	local iconOptions = options.icon
+	local tickOptions = options.ticks
+	local sparkOptions = options.spark
 
 	local generalGroup = AceGUI:Create("InlineGroup")
 	generalGroup:SetTitle("General")
@@ -266,7 +331,7 @@ local function CastBar(self)
 	generalGroup:AddChild(fontSize)
 
 	local texture = AceGUI:Create("LSM30_Statusbar")
-	texture:SetRelativeWidth(0.5)
+	texture:SetRelativeWidth(0.25)
 	texture:SetLabel("Texture")
 	texture:SetList(LSM:HashTable("statusbar"))
 	texture:SetValue(options.texture)
@@ -299,6 +364,17 @@ local function CastBar(self)
 		RefreshCastBar()
 	end)
 	generalGroup:AddChild(fontOutline)
+
+	local frameStrata = AceGUI:Create("Dropdown")
+	frameStrata:SetRelativeWidth(0.25)
+	frameStrata:SetList(SCM.Constants.FrameStrata, SCM.Constants.FrameStrataSorted)
+	frameStrata:SetLabel("Frame Strata")
+	frameStrata:SetValue(options.frameStrata or "")
+	frameStrata:SetCallback("OnValueChanged", function(self, event, value)
+		options.frameStrata = value ~= "" and value or nil
+		RefreshCastBar()
+	end)
+	generalGroup:AddChild(frameStrata)
 
 	local iconGroup = AceGUI:Create("InlineGroup")
 	iconGroup:SetTitle("Icon")
@@ -400,6 +476,123 @@ local function CastBar(self)
 		RefreshCastBar()
 	end)
 	tickGroup:AddChild(tickWidth)
+
+	local sparkGroup = AceGUI:Create("InlineGroup")
+	sparkGroup:SetTitle("Spark")
+	sparkGroup:SetFullWidth(true)
+	sparkGroup:SetLayout("flow")
+	scrollFrame:AddChild(sparkGroup)
+
+	local sparkEnable = AceGUI:Create("CheckBox")
+	sparkEnable:SetRelativeWidth(0.33)
+	sparkEnable:SetLabel("Show Spark")
+	sparkEnable:SetValue(sparkOptions.enable)
+	sparkEnable:SetCallback("OnValueChanged", function(_, _, value)
+		sparkOptions.enable = value
+		RefreshCastBar()
+	end)
+	sparkGroup:AddChild(sparkEnable)
+
+	local sparkColor = AceGUI:Create("ColorPicker")
+	sparkColor:SetRelativeWidth(0.33)
+	sparkColor:SetLabel("Spark Color")
+	sparkColor:SetHasAlpha(true)
+	sparkColor:SetColor(sparkOptions.color.r, sparkOptions.color.g, sparkOptions.color.b, sparkOptions.color.a)
+	sparkColor:SetCallback("OnValueChanged", function(_, _, r, g, b, a)
+		sparkOptions.color = { r = r, g = g, b = b, a = a }
+		RefreshCastBar()
+	end)
+	sparkGroup:AddChild(sparkColor)
+
+	local blendMode = AceGUI:Create("Dropdown")
+	blendMode:SetRelativeWidth(0.33)
+	blendMode:SetList(SCM.Constants.BlendMode, SCM.Constants.BlendModeSorted)
+	blendMode:SetLabel("Blend Mode")
+	blendMode:SetValue(sparkOptions.blendMode)
+	blendMode:SetCallback("OnValueChanged", function(self, event, value)
+		sparkOptions.frameStrata = value
+		RefreshCastBar()
+	end)
+	sparkGroup:AddChild(blendMode)
+
+	local sparkWidth = AceGUI:Create("Slider")
+	sparkWidth:SetRelativeWidth(0.25)
+	sparkWidth:SetLabel("Spark Width")
+	sparkWidth:SetSliderValues(1, 50, 0.1)
+	sparkWidth:SetValue(sparkOptions.width)
+	sparkWidth:SetCallback("OnValueChanged", function(_, _, value)
+		sparkOptions.width = value
+		RefreshCastBar()
+	end)
+	sparkGroup:AddChild(sparkWidth)
+
+	local sparkHeight = AceGUI:Create("Slider")
+	sparkHeight:SetRelativeWidth(0.25)
+	sparkHeight:SetLabel("Spark Height")
+	sparkHeight:SetSliderValues(1, 80, 0.1)
+	sparkHeight:SetValue(sparkOptions.height)
+	sparkHeight:SetCallback("OnValueChanged", function(_, _, value)
+		sparkOptions.height = value
+		RefreshCastBar()
+	end)
+	sparkGroup:AddChild(sparkHeight)
+
+	local sparkXOffset = AceGUI:Create("Slider")
+	sparkXOffset:SetRelativeWidth(0.25)
+	sparkXOffset:SetLabel("Spark X-Offset")
+	sparkXOffset:SetSliderValues(-20, 20, 0.1)
+	sparkXOffset:SetValue(sparkOptions.xOffset)
+	sparkXOffset:SetCallback("OnValueChanged", function(_, _, value)
+		sparkOptions.xOffset = value
+		RefreshCastBar()
+	end)
+	sparkGroup:AddChild(sparkXOffset)
+
+	local sparkYOffset = AceGUI:Create("Slider")
+	sparkYOffset:SetRelativeWidth(0.25)
+	sparkYOffset:SetLabel("Spark Y-Offset")
+	sparkYOffset:SetSliderValues(-20, 20, 0.1)
+	sparkYOffset:SetValue(sparkOptions.yOffset)
+	sparkYOffset:SetCallback("OnValueChanged", function(_, _, value)
+		sparkOptions.yOffset = value
+		RefreshCastBar()
+	end)
+	sparkGroup:AddChild(sparkYOffset)
+
+	local useCustomTexture = AceGUI:Create("CheckBox")
+	useCustomTexture:SetRelativeWidth(0.33)
+	useCustomTexture:SetLabel("Use Custom Texture")
+	useCustomTexture:SetValue(sparkOptions.useCustomTexture)
+
+	sparkGroup:AddChild(useCustomTexture)
+
+	local customTexture = AceGUI:Create("EditBox")
+	customTexture:SetRelativeWidth(0.66)
+	customTexture:SetLabel("Custom Texture")
+	customTexture:SetText(sparkOptions.texture or "")
+	customTexture:SetDisabled(not sparkOptions.useCustomTexture)
+	customTexture:SetCallback("OnEnter", function()
+		GameTooltip:SetOwner(self.frame, "ANCHOR_CURSOR")
+		GameTooltip:SetText("Custom Texture", nil, nil, nil, nil, true)
+		GameTooltip:AddLine("Supports LibSharedMedia names and interface paths.", 1, 1, 1, true)
+		GameTooltip:Show()
+	end)
+	customTexture:SetCallback("OnLeave", function()
+		GameTooltip:Hide()
+	end)
+	customTexture:SetCallback("OnEnterPressed", function(self, _, text)
+		sparkOptions.texture = text
+		self:SetText(sparkOptions.texture)
+		RefreshCastBar()
+	end)
+
+	useCustomTexture:SetCallback("OnValueChanged", function(_, _, value)
+		sparkOptions.useCustomTexture = value
+
+		customTexture:SetDisabled(not value)
+		RefreshCastBar()
+	end)
+	sparkGroup:AddChild(customTexture)
 
 	local colorGroup = AceGUI:Create("InlineGroup")
 	colorGroup:SetTitle("Colors")

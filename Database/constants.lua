@@ -83,9 +83,120 @@ Constants.TextOutlineSorted = {
 	"THICKOUTLINE",
 }
 
+Constants.BlendMode = {
+	["DISABLE"] = "DISABLE",
+	["BLEND"] = "BLEND",
+	["ADD"] = "ADD",
+	["MOD"] = "MOD",
+}
+
+Constants.BlendModeSorted = {
+	"DISABLE",
+	"BLEND",
+	"ADD",
+	"MOD"
+}
+
+Constants.BuffBarContent = {
+	[Enum.CooldownViewerBarContent.IconAndName] = "Bar + Icon",
+	[Enum.CooldownViewerBarContent.NameOnly] = "Bar Only"
+}
+
 Constants.ResourceBarGrowthDirection = {
 	UP = "Up",
 	DOWN = "Down",
+}
+
+Constants.CooldownTimer = {}
+
+Constants.CooldownTimer.DisplayStyle = {
+	{
+		decimalSeconds = "Decimal Seconds (1.1)",
+		seconds = "Seconds (10s)",
+		secondsOnly = "Seconds (10)",
+		clock = "Clock (1:10)",
+		minutes = "Minutes (2m)",
+		hours = "Hours (1h)",
+		days = "Days (1d)",
+	},
+	{
+		"decimalSeconds",
+		"seconds",
+		"secondsOnly",
+		"clock",
+		"minutes",
+		"hours",
+		"days",
+	},
+}
+
+Constants.CooldownTimer.DisplayStyleSettings = {
+	decimalSeconds = {
+		step = 0.1,
+		rounding = Enum.NumericRuleFormatRounding.Up,
+		format = "%.1f",
+	},
+	seconds = {
+		step = 1,
+		rounding = Enum.NumericRuleFormatRounding.Up,
+		format = "%ds",
+	},
+	secondsOnly = {
+		step = 1,
+		rounding = Enum.NumericRuleFormatRounding.Up,
+		format = "%d",
+	},
+	clock = {
+		step = 1,
+		rounding = Enum.NumericRuleFormatRounding.Up,
+		format = "%d:%02d",
+	},
+	minutes = {
+		step = 1,
+		rounding = Enum.NumericRuleFormatRounding.Up,
+		format = "%dm",
+	},
+	hours = {
+		step = 1,
+		rounding = Enum.NumericRuleFormatRounding.Up,
+		format = "%dh",
+	},
+	days = {
+		step = 1,
+		rounding = Enum.NumericRuleFormatRounding.Up,
+		format = "%dd",
+	},
+}
+
+Constants.CooldownTimer.DefaultBreakpoints = {
+	{
+		threshold = 0,
+		displayStyle = "secondsOnly",
+		step = 1,
+		rounding = Enum.NumericRuleFormatRounding.Up,
+		format = "%d",
+	},
+	{
+		threshold = 60,
+		displayStyle = "clock",
+		step = 1,
+		rounding = Enum.NumericRuleFormatRounding.Up,
+		format = "%d:%02d",
+		components = {
+			{ div = 60 },
+			{ mod = 60 },
+		},
+	},
+	{
+		threshold = 120,
+		displayStyle = "minutes",
+		step = 1,
+		rounding = Enum.NumericRuleFormatRounding.Up,
+		format = "%dm",
+		components = {
+			{ div = 60 },
+		},
+	},
 }
 
 Constants.SourcePairs = {
@@ -193,11 +304,11 @@ Constants.SpecSecondaryPower = {
 		talentSegmentCount = 3,
 	},
 	[64] = {
-        resourceKind = "icicles",
-        powerToken = "ICICLES",
-        segmentCount = 5,
-        registerUnitAura = true,
-    },
+		resourceKind = "icicles",
+		powerToken = "ICICLES",
+		segmentCount = 5,
+		registerUnitAura = true,
+	},
 	[255] = {
 		resourceKind = "tipOfTheSpear",
 		powerToken = "TIP_OF_THE_SPEAR",
@@ -327,7 +438,6 @@ Constants.DruidSecondaryResourceByPowerType = {
 	},
 }
 
-
 Constants.SegmentTicksByPowerToken = {
 	ARCANE_CHARGES = true,
 	CHI = true,
@@ -439,6 +549,7 @@ Constants.FakeAuras = {
 
 	-- SHAMAN
 	[5394] = 15, -- Healing Stream Totem
+	[108280] = 10, -- Healing Tide Totem
 	[98008] = 6, -- Spirit Link Totem
 	[192077] = 7, -- Wind Rush Totem
 	[355580] = 6, -- Static Field Totem
@@ -452,8 +563,19 @@ Constants.FakeAuras = {
 	[51485] = 20, -- Earthgrab Totem
 	[198103] = 30, -- Earth Elemental
 	--[444995] = 25, -- Surging Totem
+
+	-- MONK
+	[322118] = 12, -- Invoke Yu'lon, the Jade Serpent
 }
 
 Constants.TargetAuras = {
 	[1160] = true,
+}
+
+-- Blizzard randomly clears those cooldowns and I have to fix it. Fun :)
+Constants.FixBlizzardSpells = {
+	[202137] = true, -- Sigil of Silence
+	[204596] = true, -- Sigil of Flame
+	[207684] = true, -- Sigil or Misery
+	[325153] = true, -- Exploding Keg
 }

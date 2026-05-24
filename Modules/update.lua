@@ -71,8 +71,8 @@ local function GetScopeGroupsForConfig(customConfig, scopedGroups, isGlobal, pre
 		return scopedGroups
 	end
 
-	for _, config in pairs(customConfig) do
-		if not predicate or predicate(config) then
+	for id, config in pairs(customConfig) do
+		if not predicate or predicate(config, id) then
 			local group = isGlobal and ToGlobalGroup(config.anchorGroup) or config.anchorGroup
 			scopedGroups[group] = true
 		end

@@ -1,5 +1,6 @@
 local SCM = select(2, ...)
 local LSM = LibStub("LibSharedMedia-3.0")
+local Utils = SCM.Utils
 
 local castBarHooksSet
 
@@ -22,6 +23,7 @@ local CAST_STOP_EVENTS = {
 }
 
 local ICON_SPACING = 0
+local ANCHOR_PROXY_SIZE_CHANGED_EVENT = "SkironCooldownManager.AnchorProxy.SizeChanged"
 
 local function ApplyRelativeAnchor(frame, anchors, relativeFrame)
 	frame:ClearAllPoints()
@@ -47,7 +49,7 @@ local function CreatePips(empoweredStages)
 	local totalWidth = castBar.Status:GetWidth()
 	local totalHeight = castBar.Status:GetHeight()
 	local total = 0
-	local options = castBar.barOptions or SCM.db.profile.options.castBar
+	local options = castBar.barOptions or SCM.castBarConfig
 	local stageColors = options.empoweredStageColors
 	local tickOptions = options.ticks
 	local tickIndex = 1
@@ -100,12 +102,25 @@ local function ApplyTextStyle(fs, fontPath, fontSize, fontOutline, justify, widt
 	fs:SetShadowOffset(0, 0)
 end
 
-local function GetMatchedCastBarWidth(options)
+local function UpdateActiveAnchorFrame(castBar, options)
+	local activeAnchor, activeAnchorGroup
+	local anchor = options.anchors and options.anchors[2]
+	if type(anchor) == "string" then
+		activeAnchor, _, activeAnchorGroup = Utils.GetActiveAnchorFrame(anchor)
+	else
+		activeAnchor = anchor
+	end
+
+	castBar.SCMActiveAnchorFrame = activeAnchor
+	castBar.SCMActiveAnchorGroup = activeAnchorGroup
+	return activeAnchor
+end
+
+local function GetMatchedCastBarWidth(options, anchorFrame)
 	if not options.matchParentWidth then
 		return
 	end
 
-	local anchorFrame = SCM.Utils.GetAnchorFrame(options.anchors[2])
 	if not anchorFrame or not anchorFrame.GetWidth then
 		return
 	end
@@ -116,7 +131,7 @@ end
 
 local function UpdateIconTexture(spellTexture)
 	local castBar = SCM.CastBar
-	local iconOptions = castBar.barOptions and castBar.barOptions.icon or SCM.db.profile.options.castBar.icon
+	local iconOptions = castBar.barOptions and castBar.barOptions.icon or SCM.castBarConfig.icon
 
 	castBar.CurrentSpellTexture = spellTexture
 
@@ -131,7 +146,7 @@ end
 
 local function UpdateStatusBarLook(fillColor, bgColor)
 	local castBar = SCM.CastBar
-	local options = castBar.barOptions or SCM.db.profile.options.castBar
+	local options = castBar.barOptions or SCM.castBarConfig
 	local profileOptions = SCM.db.profile.options
 
 	local borderSize = SCM:PixelPerfect() * profileOptions.borderSize
@@ -139,15 +154,20 @@ local function UpdateStatusBarLook(fillColor, bgColor)
 	local borderColor = options.borderColor
 	local backgroundColor = bgColor or options.bgColor
 	local foregroundColor = fillColor or castBar.CurrentFillColor or options.fgColor
-	local matchedWidth, anchorFrame = GetMatchedCastBarWidth(options)
+	local anchorFrame = UpdateActiveAnchorFrame(castBar, options)
+	local matchedWidth = GetMatchedCastBarWidth(options, anchorFrame)
 	local width = matchedWidth or options.width or 270
 
-	if options.matchParentWidth and anchorFrame and not anchorFrame.SCMCastBarWidthHook then
+	if options.matchParentWidth and anchorFrame and not anchorFrame.SCMProxyGroup and not anchorFrame.SCMCastBarWidthHook then
 		anchorFrame.SCMCastBarWidthHook = true
-		anchorFrame:HookScript("OnSizeChanged", function()
+		anchorFrame:HookScript("OnSizeChanged", function(changedAnchor)
 			local currentCastBar = SCM.CastBar
-			local currentOptions = SCM.db and SCM.db.profile and SCM.db.profile.options and SCM.db.profile.options.castBar
-			if currentCastBar and currentOptions and currentOptions.matchParentWidth then
+			local currentOptions = currentCastBar and (currentCastBar.barOptions or SCM.castBarConfig)
+			if not (currentCastBar and currentOptions.enable and currentOptions.matchParentWidth) then
+				return
+			end
+
+			if currentCastBar.SCMActiveAnchorFrame == changedAnchor then
 				SCM:RefreshCastBarWidth()
 			end
 		end)
@@ -155,9 +175,9 @@ local function UpdateStatusBarLook(fillColor, bgColor)
 
 	castBar.CurrentFillColor = foregroundColor
 	castBar:SetSize(width, options.height)
-	anchorFrame = anchorFrame or SCM.Utils.GetAnchorFrame(options.anchors[2])
 	castBar:ClearAllPoints()
 	castBar:SetPoint(options.anchors[1], anchorFrame or UIParent, options.anchors[3], options.anchors[4], options.anchors[5])
+	castBar:SetFrameStrata(options.frameStrata or "BACKGROUND")
 
 	castBar:SetBackdrop({ edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = borderSize })
 	castBar:SetBackdropBorderColor(borderColor.r, borderColor.g, borderColor.b, borderColor.a)
@@ -230,6 +250,30 @@ local function UpdateStatusBarLook(fillColor, bgColor)
 	castBar.SpellNameText:SetShown(spellName.enable)
 	castBar.CastDurationText:SetShown(castDuration.enable)
 
+	local sparkOptions = options.spark
+	if sparkOptions.enable then
+		castBar.Spark:ClearAllPoints()
+		castBar.Spark:SetPoint("LEFT", castBar.Status:GetStatusBarTexture(), "RIGHT", sparkOptions.xOffset, sparkOptions.yOffset)
+		castBar.Spark:SetSize(sparkOptions.width, sparkOptions.height)
+		castBar.Spark:SetBlendMode(sparkOptions.blendMode)
+
+		if sparkOptions.texture:find("\\") then
+			castBar.Spark:SetTexture(sparkOptions.texture)
+		else
+			local texturePath = LSM:Fetch("statusbar", sparkOptions.texture)
+			if texturePath then
+				castBar.Spark:SetTexture(texturePath)
+			end
+		end
+
+		local color = sparkOptions.color
+		castBar.Spark:SetVertexColor(color.r, color.g, color.b, color.a)
+
+		castBar.Spark:Show()
+	elseif castBar.Spark:IsShown() then
+		castBar.Spark:Hide()
+	end
+
 	if castBar:IsShown() and castBar.CurrentChannelTickCount then
 		local tickOptions = options.ticks
 		local color = tickOptions.color
@@ -295,26 +339,26 @@ local function HandleCast(durationObject, castType, empoweredStages, isChannelSt
 		spellName, _, spellTexture, _, _, _, notInterruptible, spellID = UnitChannelInfo("player")
 	end
 
-    if notInterruptible then
-        fillColor = options.interruptColor
-    else
-        if options.useClassColor then
-            local _, class = UnitClass("player")
-            local color = (CUSTOM_CLASS_COLORS or RAID_CLASS_COLORS)[class]
-            fillColor = { r = color.r, g = color.g, b = color.b, a = options.fgColor.a }
-        else
-            fillColor = options.fgColor
-        end
-    end
+	if notInterruptible then
+		fillColor = options.interruptColor
+	else
+		if options.useClassColor then
+			local _, class = UnitClass("player")
+			local color = (CUSTOM_CLASS_COLORS or RAID_CLASS_COLORS)[class]
+			fillColor = { r = color.r, g = color.g, b = color.b, a = options.fgColor.a }
+		else
+			fillColor = options.fgColor
+		end
+	end
 
-    local totalDuration = durationObject:GetTotalDuration()
-    if not totalDuration or totalDuration <= 0 then
-        return
-    end
+	local totalDuration = durationObject:GetTotalDuration()
+	if not totalDuration or totalDuration <= 0 then
+		return
+	end
 
-    castBar.CurrentFillColor = fillColor
-    UpdateStatusBarLook(fillColor)
-	
+	castBar.CurrentFillColor = fillColor
+	castBar.Status:SetStatusBarColor(fillColor.r or 1, fillColor.g or 1, fillColor.b or 1, fillColor.a or 1)
+
 	castBar.CurrentEmpoweredStages = empoweredStages
 	UpdateIconTexture(spellTexture)
 
@@ -408,7 +452,6 @@ local function HandleCast(durationObject, castType, empoweredStages, isChannelSt
 
 	castBar.SpellNameText:SetText(spellName or "")
 	castBar.SpellNameText:SetWidth(max(castBar.SpellNameText:GetStringWidth(), 1))
-	ApplyRelativeAnchor(castBar.SpellNameText, options.spellName.anchors, castBar.Status)
 	castBar.CastDurationText:SetText(FormatDurationText(remaining))
 
 	castBar:SetScript("OnUpdate", function()
@@ -436,12 +479,13 @@ function SCM:RefreshCastBarWidth(delay)
 
 	C_Timer.After(delay or 0.05, function()
 		local currentCastBar = SCM.CastBar
-		local currentOptions = currentCastBar and (currentCastBar.barOptions or SCM.db.profile.options.castBar)
+		local currentOptions = currentCastBar and (currentCastBar.barOptions or SCM.castBarConfig)
 		if not currentCastBar or not currentOptions or not currentOptions.matchParentWidth then
 			return
 		end
 
-		local anchorWidth = GetMatchedCastBarWidth(currentOptions)
+		local anchorFrame = UpdateActiveAnchorFrame(currentCastBar, currentOptions)
+		local anchorWidth = GetMatchedCastBarWidth(currentOptions, anchorFrame)
 		if anchorWidth and anchorWidth > 0 then
 			UpdateStatusBarLook(currentCastBar.CurrentFillColor)
 			if currentCastBar:IsShown() and currentCastBar.CurrentEmpoweredStages and currentCastBar.Status:GetStatusBarTexture() then
@@ -457,7 +501,7 @@ function SCM:RefreshCastBarLayout()
 		return
 	end
 
-	castBar.barOptions = self.db.profile.options.castBar
+	castBar.barOptions = self.castBarConfig
 	UpdateStatusBarLook()
 
 	if castBar:IsShown() and castBar.CurrentEmpoweredStages and castBar.Status:GetStatusBarTexture() then
@@ -505,14 +549,27 @@ function SCM:CreateCastBar()
 	castBar.SpellNameText = castBar.Status:CreateFontString(nil, "OVERLAY")
 	castBar.CastDurationText = castBar.Status:CreateFontString(nil, "OVERLAY")
 
+	castBar.Spark = castBar:CreateTexture(nil, "OVERLAY", nil, 2)
+
 	self.CastBar = castBar
+	EventRegistry:RegisterCallback(ANCHOR_PROXY_SIZE_CHANGED_EVENT, function(_, proxyGroup, proxy, _width, _height, _selectedAnchorRef, isActiveProxy)
+		local currentOptions = castBar.barOptions or SCM.castBarConfig
+		if not (currentOptions.enable and currentOptions.matchParentWidth and isActiveProxy) then
+			return
+		end
+
+		if castBar.SCMActiveAnchorFrame == proxy or castBar.SCMActiveAnchorGroup == proxyGroup then
+			castBar.SCMActiveAnchorFrame = proxy
+			SCM:RefreshCastBarWidth()
+		end
+	end, castBar)
 	self:UpdateCastBar()
 	return castBar
 end
 
 function SCM:UpdateCastBar()
 	local castBar = self.CastBar
-	local options = SCM.db.profile.options.castBar
+	local options = SCM.castBarConfig
 	if not castBar then
 		return
 	end

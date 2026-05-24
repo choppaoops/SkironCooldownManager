@@ -1,6 +1,7 @@
 local SCM = select(2, ...)
 
 local Utils = SCM.Utils
+local Cache = SCM.Cache
 local COOLDOWN_CONFIG_KEY_PREFIX = "cooldown:"
 local GLOBAL_GROUP_OFFSET = 100
 local GLOBAL_BUFF_BAR_OFFSET = 200
@@ -8,19 +9,23 @@ local FIRST_GLOBAL_GROUP = GLOBAL_GROUP_OFFSET + 1
 local FIRST_BUFF_BAR_GROUP = GLOBAL_BUFF_BAR_OFFSET + 1
 local CHILD_SCM_RESET_FIELDS = {
 	"SCMConfig",
+	"SCMRowConfig",
 	"SCMConfigID",
 	"SCMCooldownID",
 	"SCMSpellID",
 	"SCMLinkedSpellID",
+	"SCMAuraInstanceID",
 	"SCMOrder",
 	"SCMGroup",
 	"SCMGlobal",
 	"SCMBuffBar",
 	"SCMBuffOptions",
+	"SCMIconOptions",
 	"SCMChanged",
 	"SCMCustom",
 	"SCMIconType",
 	"SCMIconTexture",
+	"SCMFakeAuraInstanceID",
 	"SCMGlowWhileActive",
 	"SCMPandemic",
 	"SCMRowConfig",
@@ -29,14 +34,19 @@ local CHILD_SCM_RESET_FIELDS = {
 	"SCMGlow",
 	"SCMActiveGlow",
 	"SCMAnchorFrame",
+	"SCMAnchorFrameStrata",
 	"SCMAnchorData",
 	"SCMWidth",
 	"SCMHeight",
 	"SCMBaseStartPoint",
 	"SCMBaseOffsetX",
 	"SCMBaseOffsetY",
+	"SCMLayoutLimited",
 	"SCMLayoutApplied",
+	"SCMAppliedVisibility",
+	"SCMAppliedLayoutLimited",
 	"SCMProxyAnchor",
+	"SCMState",
 }
 
 local function CreateDisabledTooltipOverlay(widget)
@@ -216,6 +226,13 @@ function Utils.ParseAnchorString(anchorString)
 		return
 	end
 
+	local parsedAnchorStrings = Cache.cachedParsedAnchorStrings
+	local cachedAnchorGroup = parsedAnchorStrings[anchorString]
+	if cachedAnchorGroup then
+		return cachedAnchorGroup
+	end
+
+	local anchorGroup
 	if anchorString:sub(1, 7) ~= "ANCHOR:" then
 		return
 	end
@@ -229,14 +246,15 @@ function Utils.ParseAnchorString(anchorString)
 
 		anchorType = string.upper(anchorType)
 		if anchorType == "I" then
-			return anchorID
+			anchorGroup = anchorID
 		elseif anchorType == "G" then
-			return Utils.ToGlobalGroup(anchorID)
+			anchorGroup = Utils.ToGlobalGroup(anchorID)
 		elseif anchorType == "BB" then
-			return Utils.ToBuffBarGroup(anchorID)
+			anchorGroup = Utils.ToBuffBarGroup(anchorID)
 		end
 
-		return
+		parsedAnchorStrings[anchorString] = anchorGroup
+		return anchorGroup
 	end
 
 	anchorID = anchorString:match("^ANCHOR:(%d+)$")
@@ -245,6 +263,7 @@ function Utils.ParseAnchorString(anchorString)
 		return
 	end
 
+	parsedAnchorStrings[anchorString] = anchorID
 	return anchorID
 end
 
@@ -269,10 +288,10 @@ function Utils.GetAnchorFrame(anchorFrames)
 	end
 
 	if anchorFrames:find(",", 1, true) then
-		for _, currentFrame in ipairs({ strsplit(",", anchorFrames) }) do
+		for currentFrame in anchorFrames:gmatch("[^,]+") do
 			currentFrame = strtrim(currentFrame)
 			local anchorFrame = currentFrame ~= "" and GetSingleAnchorFrame(currentFrame)
-			if anchorFrame and anchorFrame:IsVisible() then
+			if anchorFrame and (currentFrame:sub(1, 7) == "ANCHOR:" or anchorFrame:IsVisible()) then
 				return anchorFrame, currentFrame
 			end
 		end
@@ -281,6 +300,22 @@ function Utils.GetAnchorFrame(anchorFrames)
 	end
 
 	return GetSingleAnchorFrame(anchorFrames), anchorFrames
+end
+
+function Utils.GetActiveAnchorFrame(anchorFrames)
+	local anchorFrame, selectedAnchorRef = Utils.GetAnchorFrame(anchorFrames)
+	if type(selectedAnchorRef) ~= "string" or selectedAnchorRef:sub(1, 7) ~= "ANCHOR:" then
+		return anchorFrame, selectedAnchorRef
+	end
+
+	local anchorGroup = Utils.ParseAnchorString(selectedAnchorRef)
+	local state = anchorGroup and Cache.cachedAnchorStates[anchorGroup]
+	local proxy = state and state.currentProxyActive and state.currentProxyFrame
+	if proxy and proxy:IsShown() then
+		return proxy, selectedAnchorRef, anchorGroup
+	end
+
+	return anchorFrame, selectedAnchorRef, anchorGroup
 end
 
 function Utils.GetPairedSource(sourceIndex)
@@ -308,24 +343,45 @@ function Utils.NormalizeBuffBarGroup(group)
 	return Utils.ToBuffBarGroup(group)
 end
 
-function Utils.GetAnchorConfigForGroup(config, group, globalAnchorConfig, buffBarAnchorConfig)
-	local anchorConfig = config and config.anchorConfig and config.anchorConfig[group]
-	if anchorConfig then
-		local profileAnchorConfig = SCM.db.profile.options.anchorConfig
-		if anchorConfig.useGlobalProfileConfig and profileAnchorConfig and profileAnchorConfig[group] then
-			return profileAnchorConfig[group]
+function Utils.GetAnchorConfigForGroup(config, anchorIndex, isGlobal, isBuffBar)
+	local options = SCM.db and SCM.db.profile and SCM.db.profile.options
+
+	if isGlobal then
+		local globalAnchorConfig = (config and config.globalAnchorConfig) or SCM.globalAnchorConfig
+		return globalAnchorConfig and globalAnchorConfig[anchorIndex]
+	end
+
+	if isBuffBar then
+		local anchorConfig = config and config.buffBarsAnchorConfig and config.buffBarsAnchorConfig[anchorIndex]
+		local profileAnchorConfig = options and options.buffBarsAnchorConfig
+		if anchorConfig and anchorConfig.useGlobalProfileConfig and profileAnchorConfig and profileAnchorConfig[anchorIndex] then
+			return profileAnchorConfig[anchorIndex]
 		end
 
 		return anchorConfig
 	end
 
+	local anchorConfig = config and config.anchorConfig and config.anchorConfig[anchorIndex]
+	if anchorConfig then
+		local profileAnchorConfig = options and options.anchorConfig
+		if anchorConfig.useGlobalProfileConfig and profileAnchorConfig and profileAnchorConfig[anchorIndex] then
+			return profileAnchorConfig[anchorIndex]
+		end
+
+		return anchorConfig
+	end
+end
+
+function Utils.GetAnchorConfigForLayoutGroup(config, group)
 	if Utils.IsGlobalGroup(group) then
-		return globalAnchorConfig and globalAnchorConfig[group - GLOBAL_GROUP_OFFSET]
+		return Utils.GetAnchorConfigForGroup(config, group - GLOBAL_GROUP_OFFSET, true)
 	end
 
 	if Utils.IsBuffBarGroup(group) then
-		return buffBarAnchorConfig and buffBarAnchorConfig[group - GLOBAL_BUFF_BAR_OFFSET]
+		return Utils.GetAnchorConfigForGroup(config, group - GLOBAL_BUFF_BAR_OFFSET, nil, true)
 	end
+
+	return Utils.GetAnchorConfigForGroup(config, group)
 end
 
 function Utils.SortBySCMOrder(a, b)

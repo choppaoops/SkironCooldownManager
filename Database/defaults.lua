@@ -53,7 +53,7 @@ SCM.DB = {
 }
 
 SCM.DefaultDB = {
-	global = {
+	profile = {
 		globalAnchorConfig = {
 			[1] = {
 				anchor = { "CENTER", "UIParent", "CENTER", 0, -360 },
@@ -71,8 +71,6 @@ SCM.DefaultDB = {
 			slotConfig = {},
 			timerConfig = {},
 		},
-	},
-	profile = {
 		options = {
 			anchorUUFRoles = {
 				["HEALER"] = false,
@@ -84,6 +82,7 @@ SCM.DefaultDB = {
 				["DAMAGER"] = true,
 				["TANK"] = true,
 			},
+			elvUIAnchors = {},
 			anchorConfig = {},
 			showAnchorHighlight = true,
 			hideWhileMounted = false,
@@ -93,11 +92,16 @@ SCM.DefaultDB = {
 			hideOutOfCombat = false,
 			useCustomVisibilityCondition = false,
 			customVisibilityCondition = "",
+			buffBarContent = 0,
 			debug = false,
+			debugGroup = 0,
+			savePosition = false,
+			menuScale = 1,
 			enableSkinning = true,
 			enableCustomIcons = true,
 			simulateAuras = true,
 			iconZoom = 0.12,
+			keepIconSquareRatio = false,
 			iconFrameStrata = "",
 			chargeFont = "Expressway",
 			chargeFontSize = 22,
@@ -106,6 +110,7 @@ SCM.DefaultDB = {
 			chargeRelativePoint = "BOTTOMRIGHT",
 			chargeXOffset = -8,
 			chargeYOffset = 10,
+
 			changeCooldownFont = true,
 			cooldownFont = "Expressway",
 			cooldownFontSize = 0.6,
@@ -113,6 +118,7 @@ SCM.DefaultDB = {
 			cooldownFontColor = { r = 1, g = 1, b = 1, a = 1 },
 			cooldownXOffset = 0,
 			cooldownYOffset = 0,
+
 			useCustomGlow = false,
 			glowType = "Proc",
 			borderSize = 1,
@@ -162,6 +168,7 @@ SCM.DefaultDB = {
 				"PrimaryResourceBar",
 				"SecondaryResourceBar",
 			},
+			optionsWindow = {},
 			resourceBar = {
 				enabled = true,
 				hideWhileMounted = false,
@@ -178,6 +185,7 @@ SCM.DefaultDB = {
 				yOffset = 0,
 				spacing = -1,
 				growDirection = "UP",
+				frameStrata = "BACKGROUND",
 				useFrequentPowerUpdates = false,
 				maelstromOverflowColor = { r = 0.25, g = 0.70, b = 1.00 },
 				staggerDisplayAsPercent = false,
@@ -240,6 +248,18 @@ SCM.DefaultDB = {
 					height = 20,
 					heightAlternative = 20,
 					showValues = true,
+					forceMana = false,
+					spark = {
+						enable = false,
+						width = 2,
+						height = 22,
+						color = { r = 1, g = 1, b = 1, a = 1 },
+						texture = "Solid",
+						xOffset = 0,
+						yOffset = 0,
+						useCustomTexture = false,
+						blendMode = "ADD",
+					},
 					druidFormPowerTypes = {
 						[102] = {
 							[0] = "none",
@@ -299,6 +319,18 @@ SCM.DefaultDB = {
 					heightAlternative = 20,
 					showValues = true,
 					disableMaelstromOverflow = false,
+					forceMana = false,
+					spark = {
+						enable = false,
+						width = 2,
+						height = 22,
+						color = { r = 1, g = 1, b = 1, a = 1 },
+						texture = "Solid",
+						xOffset = 0,
+						yOffset = 0,
+						useCustomTexture = false,
+						blendMode = "ADD",
+					},
 					druidFormPowerTypes = {
 						[102] = {
 							[0] = "none",
@@ -339,6 +371,7 @@ SCM.DefaultDB = {
 				font = "Expressway",
 				fontSize = 12,
 				fontOutline = "OUTLINE",
+				frameStrata = "BACKGROUND",
 				matchParentWidth = true,
 				useClassColor = false,
 				fgColor = { r = 0.5, g = 0.5, b = 1, a = 1 },
@@ -364,6 +397,17 @@ SCM.DefaultDB = {
 					enable = true,
 					width = 2,
 					color = { r = 1, g = 1, b = 1, a = 1 },
+				},
+				spark = {
+					enable = false,
+					width = 2,
+					height = 22,
+					color = { r = 1, g = 1, b = 1, a = 1 },
+					texture = "Solid",
+					xOffset = 0,
+					yOffset = 0,
+					useCustomTexture = false,
+					blendMode = "ADD",
 				},
 				spellName = {
 					enable = true,
