@@ -29,6 +29,7 @@ local function OnBuffCooldownSet(self)
 
 	if parent.auraInstanceID and (not parent.SCMAuraInstanceID or parent.auraInstanceID ~= parent.SCMAuraInstanceID) then
 		parent.SCMAuraInstanceID = parent.auraInstanceID
+		parent.SCMAuraDataUnit = parent.auraDataUnit or parent.SCMAuraDataunit
 	end
 
 	if not parent.SCMHidden or parent.SCMConfig.alwaysShow then
@@ -54,8 +55,9 @@ local function OnBuffCooldownEnd(self)
 	end
 
 	if parent.SCMAuraInstanceID and not parent.SCMCheckCooldownFrame then
-		if not C_UnitAuras.GetAuraDataByAuraInstanceID("player", parent.SCMAuraInstanceID) then
+		if not C_UnitAuras.GetAuraDataByAuraInstanceID(parent.SCMAuraDataUnit, parent.SCMAuraInstanceID) then
 			parent.SCMAuraInstanceID = nil
+			parent.SCMAuraDataUnit = nil
 		else
 			return
 		end
