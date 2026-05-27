@@ -486,6 +486,13 @@ local function HandleCast(durationObject, castType, empoweredStages, isChannelSt
 	castBar.Status:SetMinMaxValues(0, totalDuration)
 	castBar.Status:SetValue(isChannel and remaining or totalDuration - remaining)
 
+	if spellID == 1271478 then
+		local specID = GetLootSpecialization()
+		if specID and specID > 0 then
+			spellName = GENERATE_LOOT_FOR_SPEC:format((select(2, GetSpecializationInfoByID(specID))))
+		end
+	end
+
 	castBar.SpellNameText:SetText(spellName or "")
 	castBar.SpellNameText:SetWidth(max(castBar.SpellNameText:GetStringWidth(), 1))
 	castBar.CastDurationText:SetText(FormatDurationText(remaining))
