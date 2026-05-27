@@ -202,7 +202,7 @@ function SCM:SkinChild(child, childConfig)
 		return
 	end
 
-	if not options.enableSkinning then
+	if not options.enableSkinning or child.SCMIconType == "empty" then
 		return
 	end
 
@@ -212,10 +212,6 @@ function SCM:SkinChild(child, childConfig)
 	end
 
 	local borderSize = options.borderSize
-	if child.SCMCustom and child.SCMIconType == "empty" then
-		borderSize = 0
-	end
-
 	local borderColor = options.borderColor
 
 	if not child.SCMSkinned or (child.SCMSkinned and self.OptionsFrame ~= nil and self.OptionsFrame:IsShown()) then

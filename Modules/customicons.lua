@@ -656,13 +656,6 @@ local function ConfigureCustomIconFrame(frame, id, config, viewerScale, anchorGr
 	frame.SCMGlobal = isGlobal and true or nil
 	frame.SCMCustom = true
 
-	if frame.SCMIconType == "empty" then
-		frame:SetBackdrop(nil)
-	else
-		frame:SetBackdrop(frame.backdropInfo)
-		frame:SetBackdropBorderColor(frame.backdropBorderColor:GetRGBA())
-	end
-
 	if frame.SCMIconType == "item" then
 		SetCustomItemID(frame, config)
 	elseif config.slotID then

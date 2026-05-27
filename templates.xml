@@ -1,22 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/ ..\FrameXML\UI.xsd">
-	<Frame name="SCMItemIconTemplate" inherits="BackdropTemplate" virtual="true">
+	<Frame name="SCMItemIconTemplate" virtual="true">
 		<Size>
 			<AbsDimension x="35" y="35"/>
 		</Size>
 		<KeyValues>
 			<KeyValue key="cooldownFont" value="GameFontHighlightHugeOutline" type="string"/>
-			<KeyValue key="backdropInfo" value="BACKDROP_SCM_PIXEL" type="global"/>
-			<KeyValue key="backdropBorderColor" value="BLACK_FONT_COLOR" type="global"/>
 		</KeyValues>
 		<Layers>
 			<Layer level="ARTWORK">
 				<Texture name="$parentIcon" parentKey="Icon" >
 					<Anchors>
-						<Anchor point="TOPLEFT" x="2" y="-2"/>
-						<Anchor point="BOTTOMRIGHT" x="-2" y="2"/>
+						<Anchor point="TOPLEFT" x="0" y="0"/>
+						<Anchor point="BOTTOMRIGHT" x="0" y="0"/>
 					</Anchors>
-					<TexCoords left="0.12" right="0.88" top="0.12" bottom="0.88"/>
 				</Texture>
 			</Layer>
 			<Layer level="OVERLAY">
