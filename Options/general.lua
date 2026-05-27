@@ -498,7 +498,7 @@ local function SelectGlobalSettingsTab(tabWidget, group, options)
 		iconZoom:SetRelativeWidth(0.25)
 		iconZoom:SetValue(options.iconZoom or 1)
 		iconZoom:SetLabel("Zoom")
-		iconZoom:SetSliderValues(0.00, 0.4, 0.01)
+		iconZoom:SetSliderValues(-0.1, 0.4, 0.01)
 		iconZoom:SetIsPercent(true)
 		iconZoom:SetCallback("OnValueChanged", function(self, event, value)
 			options.iconZoom = value
