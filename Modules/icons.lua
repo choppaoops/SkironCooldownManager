@@ -163,7 +163,7 @@ local function OnHide(child)
 				return
 			elseif child.SCMAuraInstanceID and not child.SCMFakeAuraInstanceID 
 			and C_UnitAuras.GetAuraDataByAuraInstanceID(child.SCMAuraDataUnit, child.SCMAuraInstanceID)
-			and not C_UnitAuras.IsAuraFilteredOutByInstanceID(child.SCMAuraDataUnit, child.SCMAuraInstanceID, "PLAYER") then
+			and C_UnitAuras.IsAuraFilteredOutByInstanceID(child.SCMAuraDataUnit, child.SCMAuraInstanceID, "PLAYER") then
 				return
 			end
 
