@@ -21,7 +21,6 @@ local CHILD_SCM_RESET_FIELDS = {
 	"SCMBuffBar",
 	"SCMBuffOptions",
 	"SCMIconOptions",
-	"SCMCheckCooldownFrame",
 	"SCMChanged",
 	"SCMCustom",
 	"SCMIconType",
@@ -171,6 +170,7 @@ function Utils.ResetChildSCMState(child)
 	if not child then
 		return
 	end
+
 
 	if child.SCMHideTimer then
 		child.SCMHideTimer:Cancel()

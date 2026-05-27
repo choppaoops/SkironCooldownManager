@@ -146,6 +146,10 @@ local function OnShow(child)
 		if child.SCMBuffBar then
 			if Constants.FakeAuras[child.SCMSpellID] then
 				child.SCMFakeAuraInstanceID = true
+
+				if child.SCMUseFixedDuration then
+					child.SCMFixedDuration = child.SCMFixedDuration or GetTime() + Constants.FakeAuras[child.SCMSpellID]
+				end
 			elseif child.auraInstanceID then
 				child.SCMAuraInstanceID = child.SCMAuraInstanceID or child.auraInstanceID
 				child.SCMAuraDataUnit = child.SCMAuraDataUnit or child.auraDataUnit
@@ -161,15 +165,17 @@ local function OnHide(child)
 		if child.SCMBuffBar then
 			if child.SCMFakeAuraInstanceID and child.SCMFixedDuration and GetTime() < child.SCMFixedDuration then
 				return
-			elseif child.SCMAuraInstanceID and not child.SCMFakeAuraInstanceID 
-			and C_UnitAuras.GetAuraDataByAuraInstanceID(child.SCMAuraDataUnit, child.SCMAuraInstanceID)
-			and C_UnitAuras.IsAuraFilteredOutByInstanceID(child.SCMAuraDataUnit, child.SCMAuraInstanceID, "PLAYER") then
-				return
+			elseif child.SCMAuraInstanceID and not child.SCMFakeAuraInstanceID then
+				local auraData = C_UnitAuras.GetAuraDataByAuraInstanceID(child.SCMAuraDataUnit, child.SCMAuraInstanceID)
+				if auraData and auraData.isFromPlayerOrPlayerPet then
+					return
+				end
 			end
 
 			child.SCMAuraInstanceID = nil
 			child.SCMAuraDataUnit = nil
 			child.SCMFakeAuraInstanceID = nil
+			child.SCMFixedDuration = nil
 		end
 
 		SCM:ApplyAnchorGroupCDManagerConfig(child.SCMGroup, child.SCMGlobal, child.viewerFrame and child.viewerFrame.SCMUpdateScope)
@@ -218,13 +224,12 @@ function Icons.SetupBuffBarHooks(child)
 		child:HookScript("OnShow", OnShow)
 		child:HookScript("OnHide", OnHide)
 
-		if type(Constants.FakeAuras[child.SCMSpellID]) == "number" then
-			child.SCMFixedDuration = GetTime() + Constants.FakeAuras[child.SCMSpellID]
-		end
-		-- DevTool:AddData(child)
+		child.SCMUseFixedDuration = type(Constants.FakeAuras[child.SCMSpellID]) == "number"
 	else
 		child:HookScript("OnShow", OnShow)
 		hooksecurefunc(child, "OnAuraInstanceInfoCleared", OnHide)
+
+		child.SCMUseFixedDuration = nil
 	end
 end
 
