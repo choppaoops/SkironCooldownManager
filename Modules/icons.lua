@@ -427,7 +427,7 @@ local function ProcessSingleChild(child, validChildren, categoryIndex, isBuffIco
 
 	local group = GetConfiguredGroupForCategory(childData, categoryIndex)
 	local groupConfig = childData.anchorGroup and childData.anchorGroup[group]
-	if not (group and groupConfig) and child.SCMConfig then
+	if not (group and groupConfig) and not child.SCMConfig then
 		if child.SCMConfig then
 			Utils.ResetChildSCMState(child)
 		end
