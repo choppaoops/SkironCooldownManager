@@ -175,7 +175,7 @@ local function ApplyCooldownStyle(child, options)
 		-- if child.SCMCustom then
 		-- 	cooldownFrame:SetPoint("TOPLEFT", child, "TOPLEFT", 0, -SCM:PixelPerfect())
 		-- end
-		-- cooldownFrame:SetPoint("BOTTOMRIGHT", child, "BOTTOMRIGHT", -SCM:PixelPerfect(), SCM:PixelPerfect())
+		cooldownFrame:SetPoint("BOTTOMRIGHT", child, "BOTTOMRIGHT", -SCM:PixelPerfect(), SCM:PixelPerfect())
 		cooldownFrame:SetSwipeTexture("Interface\\Buttons\\WHITE8x8")
 
 		hooksecurefunc(cooldownFrame, "SetCooldown", OnSetCooldown)
