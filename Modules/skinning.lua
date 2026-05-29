@@ -123,6 +123,15 @@ local function ApplyCooldownSwipe(cooldownFrame, options)
 	local parent = cooldownFrame:GetParent()
 	local forceActiveSwipe = parent.SCMConfig and parent.SCMConfig.forceActiveSwipe
 
+	-- [SCM-fork] Swipe direction by icon category, replacing the old global
+	-- reverseActiveSwipe toggle:
+	--   * Buff icon viewers (SCMBuffOptions) count down bright -> dark, so their
+	--     dark swipe must GROW over time -> reverse = true.
+	--   * Icons showing an active aura use Blizzard's native active swipe, which
+	--     already SHRINKS to show remaining time -> reverse = false.
+	--   * Icons on cooldown count down dark -> bright -> reverse = false.
+	local isBuffViewer = parent.SCMBuffOptions and true or false
+
 	if parent.auraInstanceID or parent.SCMFakeAuraInstanceID or parent.SCMBuffOptions then
 		if options.disableRegularIconActiveSwipe and not forceActiveSwipe then
 			if options.recolorNormalSwipe then
@@ -131,21 +140,20 @@ local function ApplyCooldownSwipe(cooldownFrame, options)
 				cooldownFrame:SetSwipeColor(0, 0, 0, 0.7)
 			end
 
-			if parent.SCMBuffOptions then
-				cooldownFrame:SetReverse(options.reverseActiveSwipe)
-			end
+			cooldownFrame:SetReverse(isBuffViewer)
 		else
 			if options.recolorActiveSwipe then
 				cooldownFrame:SetSwipeColor(unpack(options.activeSwipeColor))
 			end
 
-			cooldownFrame:SetReverse(options.reverseActiveSwipe)
+			cooldownFrame:SetReverse(isBuffViewer)
 		end
 	elseif options.recolorNormalSwipe then
 		cooldownFrame:SetSwipeColor(unpack(options.normalSwipeColor))
 		cooldownFrame:SetReverse(false)
 	else
 		cooldownFrame:SetSwipeColor(0, 0, 0, 0.7)
+		cooldownFrame:SetReverse(false)
 	end
 end
 
