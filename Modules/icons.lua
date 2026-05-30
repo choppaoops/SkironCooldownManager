@@ -405,7 +405,7 @@ local function ProcessSingleChild(child, validChildren, categoryIndex, isBuffIco
 	end
 
 	local activeScopedAnchorGroups = Cache.activeScopedAnchorGroups
-	local cooldownID = child:GetCooldownID() or hild.SCMCooldownID
+	local cooldownID = child:GetCooldownID() or child.SCMCooldownID
 	local categoryConfig = categoryIndex and SCM.defaultCooldownViewerConfig[categoryIndex]
 	local info = categoryConfig and (categoryConfig[cooldownID] or SCM.defaultCooldownViewerConfig.cooldownIDs[cooldownID])
 	local spellID = info and (info.overrideSpellID or info.spellID)
