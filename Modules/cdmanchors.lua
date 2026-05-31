@@ -85,7 +85,7 @@ end
 local function SetChildPoint(child, groupAnchor, startPoint, offsetX, offsetY)
 	child.SCMAnchorFrame = groupAnchor
 
-	local cooldownID = not child.SCMCustom and child:GetCooldownID()
+	local cooldownID = not child.SCMCustom and (child:GetCooldownID() or child.SCMCooldownID)
 	local anchorData = cooldownID and anchorDataByCooldownID[cooldownID] or not cooldownID and child.SCMAnchorData
 	if not anchorData then
 		anchorData = {}

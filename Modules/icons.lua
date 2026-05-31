@@ -356,14 +356,15 @@ local function ProcessBuffIcon(child, childData, options)
 
 	local forceShow = SCM.simulateBuffs or (not SCM.isHideWhenInactiveEnabled and childData.alwaysShow)
 	local shouldHide = (childData.showWhileInactive and not isInactive) or (isInactive and not (forceShow or childData.showWhileInactive))
-
+	local wasVisible = child.SCMShouldBeVisible
+	
 	if shouldHide then
-		child.SCMChanged = child.SCMChanged or not child.SCMHidden
+		child.SCMChanged = child.SCMChanged or wasVisible
 		Icons.SetChildVisibilityState(child, false, true)
 		return
 	end
 
-	child.SCMChanged = child.SCMChanged or child.SCMHidden
+	child.SCMChanged = child.SCMChanged or not wasVisible
 	Icons.SetChildVisibilityState(child, true, true)
 	Icons.UpdateChildDesaturation(child, isInactive)
 	Icons.UpdateChildGlow(child, isInactive)
