@@ -375,6 +375,16 @@ function SCM:SkinBuffBar(child, config)
 		bar.Name:SetFont(LSM:Fetch("font", buffBarOptions.font), buffBarOptions.fontSize, fontOutline)
 		bar.Duration:SetFont(LSM:Fetch("font", buffBarOptions.font), buffBarOptions.fontSize, fontOutline)
 
+		local nameColor = buffBarOptions.nameColor
+		bar.Name:ClearPointsOffset()
+		bar.Name:AdjustPointsOffset(buffBarOptions.nameXOffset, buffBarOptions.nameYOffset)
+		bar.Name:SetTextColor(nameColor.r, nameColor.g, nameColor.b, nameColor.a)
+
+		local durationColor = buffBarOptions.durationColor
+		bar.Duration:ClearPointsOffset()
+		bar.Duration:AdjustPointsOffset(buffBarOptions.durationXOffset, buffBarOptions.durationYOffset)
+		bar.Duration:SetTextColor(durationColor.r, durationColor.g, durationColor.b, durationColor.a)
+
 		bar.customBorder = bar.customBorder or CreateFrame("Frame", nil, bar, "BackdropTemplate")
 		bar.customBorder:SetFrameLevel(bar:GetFrameLevel() + 1)
 		bar.customBorder:SetAllPoints(bar)
