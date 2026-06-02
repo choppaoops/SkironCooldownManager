@@ -282,7 +282,7 @@ function Icons.CollectScopedAnchorGroups(updateScope, config, viewerUpdateMappin
 		return targetGroups
 	end
 
-	for _, child in ipairs(GetOrCacheChildren(viewer, viewerData.isBuffIcon or viewerData.isBuffBar)) do
+	for _, child in ipairs(GetOrCacheChildren(viewer)) do
 		if child.GetCooldownID then
 			local cooldownID = child:GetCooldownID()
 			local _, childData = GetSpellConfigByCooldownID(SCM.spellConfig, cooldownID)
