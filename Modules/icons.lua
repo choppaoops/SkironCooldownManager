@@ -386,7 +386,7 @@ local function ProcessBuffBar(child, childData, options)
 	Icons.SetupBuffBarHooks(child)
 	child.SCMBuffBarOptions = options
 
-	local isInactive = not child.auraInstanceID and not child.SCMFakeAuraInstanceID
+	local isInactive = not child.auraInstanceID and not child.SCMFakeAuraInstanceID and not child.SCMAuraInstanceID
 	local forceShow = SCM.simulateBuffs or (not SCM.isHideWhenInactiveEnabled and childData.alwaysShow)
 	local shouldHide = isInactive and not forceShow
 
@@ -471,7 +471,7 @@ local function ProcessSingleBuffBarChild(child, validChildren, categoryIndex, op
 	end
 
 	local activeScopedAnchorGroups = Cache.activeScopedAnchorGroups
-	local cooldownID = child:GetCooldownID()
+	local cooldownID = child:GetCooldownID() or child.SCMCooldownID
 	local categoryConfig = categoryIndex and SCM.defaultCooldownViewerConfig[categoryIndex]
 	local info = categoryConfig and (categoryConfig[cooldownID] or SCM.defaultCooldownViewerConfig.cooldownIDs[cooldownID])
 	local spellID = info and (info.overrideSpellID or info.spellID)
