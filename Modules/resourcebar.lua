@@ -1083,7 +1083,14 @@ function SCM:ApplyResourceBarAttributeDriver(forceHide)
 	if forceHide then
 		RegisterAttributeDriver(container, "state-visibility", "hide")
 	else
-		RegisterAttributeDriver(container, "state-visibility", SCM:GetVisibilityConditions(self.resourceBarConfig))
+		local condition = SCM:GetVisibilityConditions(self.resourceBarConfig)
+
+		if condition == "show" then
+			RegisterAttributeDriver(container, "state-visibility", condition)
+			UnregisterAttributeDriver(container, "state-visibility")
+		else
+			RegisterAttributeDriver(container, "state-visibility", condition)
+		end
 	end
 
 	if container.SCMResourceBarInitialized and container.UpdateContainerShownState then
@@ -1126,7 +1133,7 @@ end
 function SCMResourceBarControllerMixin:ApplyFrameWidthOptions(bar)
 	local specificBarOptions = bar.barOptions
 	local generalBarOptions = self.barOptions
-	local anchor = self.SCMActiveAnchorFrame or self:UpdateActiveAnchorFrame(generalBarOptions.anchorFrame or DEFAULT_RESOURCE_BAR_ANCHOR)
+	local anchor = self:UpdateActiveAnchorFrame(generalBarOptions.anchorFrame or DEFAULT_RESOURCE_BAR_ANCHOR)
 
 	if anchor then
 		local widthFromOptions = specificBarOptions.width
@@ -1168,6 +1175,7 @@ end
 
 function SCMResourceBarControllerMixin:UpdateRefreshState()
 	local needsContinuousRefresh = BarNeedsContinuousRefresh(self.PrimaryBar) or BarNeedsContinuousRefresh(self.SecondaryBar)
+
 	if not needsContinuousRefresh then
 		self:SetScript("OnUpdate", nil)
 		self.totalElapsed = nil
