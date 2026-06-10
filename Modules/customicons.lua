@@ -584,7 +584,7 @@ local function DoesItemOrSpellExists(config)
 		return true
 	end
 
-	if iconType == "spell" or iconType == "timer" then
+	if iconType == "spell" or iconType == "timer" or iconType == "bloodlust" then
 		return config.spellID and C_Spell.DoesSpellExist(config.spellID)
 	end
 
@@ -696,7 +696,7 @@ function ShouldShowCustomIcon(config, iconType, hasCount, isOnCooldown, frame)
 	hasCount = hasCount == nil and frame and SetCustomIconCountText(frame, iconType, config) or hasCount
 	isOnCooldown = isOnCooldown == nil and frame and UpdateCustomIconCooldown(frame, iconType, config) or isOnCooldown
 
-	if iconType == "timer" then
+	if iconType == "timer" or iconType == "bloodlust" then
 		return isOnCooldown and true or false
 	end
 
