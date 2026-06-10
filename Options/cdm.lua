@@ -250,11 +250,21 @@ local function CreateCustomIconButton(rootDescription, scrollFrame, anchorIndex,
 
 			insertedData.id = uniqueID
 
+			if buttonConfig.config then
+				local customConfig = SCM:GetConfigTableByID(uniqueID, buttonConfig.iconType, isGlobal)
+				for key, value in pairs(buttonConfig.config) do
+					customConfig[key] = value
+				end
+				SCM:CreateAllCustomIcons(buttonConfig.iconType)
+			end
+
 			SCM:ApplyAnchorGroupCDManagerConfig(anchorIndex, isGlobal)
 		end
 
 		if buttonConfig.popupKey then
 			ShowNumericInputPopup(buttonConfig.popupKey, buttonConfig.popupTitle, AddCustomIcon)
+		elseif buttonConfig.configID then
+			AddCustomIcon(buttonConfig.configID)
 		elseif buttonConfig.iconType == "empty" then
 			AddCustomIcon("")
 		end
