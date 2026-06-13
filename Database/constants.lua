@@ -262,6 +262,16 @@ Constants.SpecIDs = {
 	73,
 }
 
+Constants.SatedDebuffs = {
+	[57723] = true,
+	[57724] = true,
+	[80354] = true,
+	[95809] = true,
+	[160455] = true,
+	[264689] = true,
+	[390435] = true,
+}
+
 Constants.ClassSecondaryPower = {
 	["DEATHKNIGHT"] = {
 		resourceKind = "runes",
@@ -545,7 +555,9 @@ Constants.FakeAuras = {
 	[265187] = 15, -- Summon Tyrant 15
 	[1288950] = 23, -- Grimoire: Fel Ravager
 	[104316] = 12, -- Call Dreadstalkers
+	[1251781] = 15, -- Summon Vilefiend
 	[1276672] = 12, -- Summon Doomguard (not even Blizzard shows that)
+	[1122] = true, -- Summon Infernal
 
 	-- PALADIN
 	[26573] = true, -- Consecration 12
@@ -575,6 +587,7 @@ Constants.FakeAuras = {
 
 	-- MONK
 	[322118] = true, -- Invoke Yu'lon, the Jade Serpent 12
+	[325197] = true, -- Invoke Chi-ji, the Red Crane 12
 }
 
 Constants.TargetAuras = {

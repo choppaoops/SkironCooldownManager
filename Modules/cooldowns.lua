@@ -22,7 +22,7 @@ function Cooldowns:ApplyFormatterSettings()
 end
 
 local function OnBuffCooldownSet(self)
-	local parent = (self.SCMConfig and self) or self:GetParent()
+	local parent = (self.SCMConfig and self) or self.SCMParent or self:GetParent()
 	if not parent or not parent.SCMConfig or (not parent.SCMCheckCooldownFrame and not parent.auraInstanceID) then
 		return
 	end
@@ -31,7 +31,7 @@ local function OnBuffCooldownSet(self)
 		parent.SCMAuraInstanceID = parent.auraInstanceID
 		parent.SCMAuraDataUnit = parent.auraDataUnit or parent.SCMAuraDataunit
 	elseif parent.SCMUseFixedDuration then
-		parent.SCMFixedDuration = parent.SCMFixedDuration or GetTime() + Constants.FakeAuras[parent.SCMSpellID]
+		parent.SCMFixedDuration = parent.SCMFixedDuration or GetTime() + parent.SCMUseFixedDuration
 	end
 
 	if not parent.SCMHidden or parent.SCMConfig.alwaysShow then
@@ -51,7 +51,7 @@ local function OnBuffCooldownSet(self)
 end
 
 local function OnBuffCooldownEnd(self)
-	local parent = (self.SCMConfig and self) or self:GetParent()
+	local parent = (self.SCMConfig and self) or self.SCMParent or self:GetParent()
 	if not parent or not parent.SCMConfig then
 		return
 	end
@@ -139,7 +139,7 @@ function Cooldowns.SetupBuffIconHooks(child, options)
 		end
 
 		child.SCMCheckCooldownFrame = true
-		child.SCMUseFixedDuration = type(Constants.FakeAuras[child.SCMSpellID]) == "number"
+		child.SCMUseFixedDuration = type(Constants.FakeAuras[child.SCMSpellID]) == "number" and Constants.FakeAuras[child.SCMSpellID]
 	else
 		if not child.SCMAuraHooked then
 			hooksecurefunc(child, "OnAuraInstanceInfoSet", OnBuffCooldownSet)
@@ -160,18 +160,28 @@ function Cooldowns.SetupBuffIconHooks(child, options)
 	end
 end
 
-function Cooldowns.IsChildOnCooldown(child)
-	if not child or not child.Cooldown then
-		return
+function Cooldowns.GetChildCooldown(child)
+	local cooldownData = SCM.defaultCooldownViewerConfig.cooldownIDs[child.SCMCooldownID]
+
+	local durationObject
+
+	local spellCooldown = C_Spell.GetSpellCooldown(child.SCMSpellID)
+	if spellCooldown and spellCooldown.isActive and not spellCooldown.isOnGCD then
+		durationObject = C_Spell.GetSpellCooldownDuration(child.SCMSpellID, true)
 	end
 
-	local spellCooldownInfo = C_Spell.GetSpellCooldown(child.SCMSpellID)
-	local isOnCooldown = spellCooldownInfo and spellCooldownInfo.isActive and not spellCooldownInfo.isOnGCD
+	if cooldownData.charges and not durationObject then
+		local spellCharges = C_Spell.GetSpellCharges(child.SCMSpellID)
+		if spellCharges and spellCharges.isActive and not spellCharges.isOnGCD then
+			durationObject = C_Spell.GetSpellChargeDuration(child.SCMSpellID, true)
+		end
+	end
+
 	if Constants.CheckCooldownFrameSpells[child.SCMSpellID] then
-		return isOnCooldown and child.Cooldown:IsVisible()
+		return durationObject ~= nil and child.Cooldown:IsVisible(), durationObject
 	end
 
-	return isOnCooldown
+	return durationObject ~= nil, durationObject
 end
 
 function Cooldowns.SetNormalCooldown(self, parent)
@@ -181,16 +191,17 @@ function Cooldowns.SetNormalCooldown(self, parent)
 	local durationObject
 	local desaturate = false
 
-	local spellCooldown = C_Spell.GetSpellCooldown(parent.SCMSpellID)
+	local spellID =  FindSpellOverrideByID(parent.SCMSpellID)
+	local spellCooldown = C_Spell.GetSpellCooldown(spellID)
 	if spellCooldown and spellCooldown.isActive and not spellCooldown.isOnGCD then
 		desaturate = true
-		durationObject = C_Spell.GetSpellCooldownDuration(parent.SCMSpellID, true)
+		durationObject = C_Spell.GetSpellCooldownDuration(spellID, true)
 	end
 
 	if cooldownData.charges and not durationObject then
-		local spellCharges = C_Spell.GetSpellCharges(parent.SCMSpellID)
+		local spellCharges = C_Spell.GetSpellCharges(spellID)
 		if spellCharges and spellCharges.isActive and not spellCharges.isOnGCD then
-			durationObject = C_Spell.GetSpellChargeDuration(parent.SCMSpellID, true)
+			durationObject = C_Spell.GetSpellChargeDuration(spellID, true)
 		end
 	end
 
@@ -246,7 +257,7 @@ function Cooldowns.OverwriteRegularChildCooldownBySpellID(spellID, overrideSpell
 end
 
 local function OnRegularCooldownChanged(self, changeType)
-	local parent = self:GetParent()
+	local parent = self.SCMParent or self:GetParent()
 	if not (parent and parent.SCMConfig) or self.SCMSettingRegularSpellCooldown or self.SCMClearingGCD then
 		return
 	end
@@ -264,7 +275,7 @@ local function OnRegularCooldownChanged(self, changeType)
 
 	local config = parent.SCMConfig
 	if config.hideWhenNotOnCooldown then
-		local shouldShow = Cooldowns.IsChildOnCooldown(parent) and true or false
+		local shouldShow = Cooldowns.GetChildCooldown(parent) and true or false
 		if parent.SCMShouldBeVisible ~= shouldShow then
 			local viewer = parent.viewerFrame
 			if viewer then
@@ -296,8 +307,9 @@ function Cooldowns.SetupCooldownHooks(child)
 		OnRegularCooldownChanged(self, "CLEAR")
 	end)
 
+	child.Cooldown.SCMParent = child
 	child.Cooldown:HookScript("OnCooldownDone", function(self, ...)
-		local parent = self:GetParent()
+		local parent = self.SCMParent or self:GetParent()
 		parent.Icon.SCMDesaturated = nil
 		OnRegularCooldownChanged(self, "DONE")
 	end)

@@ -37,6 +37,11 @@ local function OnSpellAlertManagerShowAlert(_, child)
 	child.SCMActiveGlow = true
 	child.SpellActivationAlert:Hide()
 
+	if pendingCustomGlowChildren[child] then
+		pendingCustomGlowChildren[child]:Cancel()
+		pendingCustomGlowChildren[child] = nil
+	end
+
 	-- The size of the glow is too large when you start the glow immediately if anyone is wondering why I do that
 	pendingCustomGlowChildren[child] = C_Timer.NewTimer(0, function()
 		SCM:StartCustomGlow(child)
@@ -256,16 +261,30 @@ end
 function SCM:TRAIT_CONFIG_UPDATED()
 	C_Timer.After(0.5, function()
 		RefreshCooldownViewerData(true)
-		SCM:RefreshResourceBarConfig()
 	end)
+end
+
+local function ClearLayoutPoints()
+	if InCombatLockdown() then
+		return
+	end
+
+	for _, anchorFrame in pairs(SCM.anchorFrames) do
+		anchorFrame:ClearAllPoints()
+	end
+
+	SCM_ResourceBarContainer:ClearAllPoints()
+	SCM_SecondaryResourceBar:ClearAllPoints()
+	SCM_PrimaryResourceBar:ClearAllPoints()
+	SCM_CastBar:ClearAllPoints()
 end
 
 function SCM:ACTIVE_PLAYER_SPECIALIZATION_CHANGED()
 	SCM:ResetCooldownViewerRuntimeState()
+	ClearLayoutPoints()
 
 	C_Timer.After(0.5, function()
 		RefreshCooldownViewerData(true)
-		SCM:RefreshResourceBarConfig()
 	end)
 end
 
@@ -398,6 +417,10 @@ function SCM:GetConfigTable(iconType, isGlobal)
 
 	if iconType == "timer" then
 		return isGlobal and self.globalCustomConfig.timerConfig or self.customConfig.timerConfig
+	end
+
+	if iconType == "bloodlust" then
+		return isGlobal and self.globalCustomConfig.bloodlustConfig or self.customConfig.bloodlustConfig
 	end
 
 	return isGlobal and self.globalCustomConfig.itemConfig or self.customConfig.itemConfig

@@ -20,6 +20,14 @@ local function ApplyChargeAndApplicationStyle(child, options, fontPath)
 
 		if fontPath then
 			child.ChargeCount.Current:SetFont(fontPath, size, outline)
+			child.ChargeCount.Current:SetWordWrap(false)
+			child.ChargeCount.Current:SetNonSpaceWrap(false)
+			child.ChargeCount.Current:SetMaxLines(1)
+
+			local width = child.ChargeCount.Current:GetStringWidth()
+			if not issecretvalue(width) then
+				child.ChargeCount:SetWidth(width)
+			end
 		end
 
 		child.ChargeCount.Current:ClearAllPoints()
@@ -57,6 +65,14 @@ local function ApplyChargeAndApplicationStyle(child, options, fontPath)
 		local outline = rowConfig.applicationsFontOutline or options.chargeFontOutline or "OUTLINE"
 		if fontPath then
 			child.Applications.Applications:SetFont(fontPath, size, outline)
+			child.Applications.Applications:SetWordWrap(false)
+			child.Applications.Applications:SetNonSpaceWrap(false)
+			child.Applications.Applications:SetMaxLines(1)
+
+			local width = child.Applications.Applications:GetStringWidth()
+			if not issecretvalue(width) then
+				child.Applications:SetWidth(width)
+			end
 		end
 
 		child.Applications.Applications:ClearAllPoints()
@@ -81,8 +97,8 @@ local function ApplyCooldownFont(cooldownFrame, options)
 				originalCooldownFont = { cooldownFontString:GetFont() }
 			end
 
-			local parent = cooldownFrame:GetParent()
-			if parent.SCMWidth and parent.SCMHeight then
+			local parent = cooldownFrame.SCMParent or cooldownFrame:GetParent()
+			if parent and parent.SCMWidth and parent.SCMHeight then
 				local width, height = parent.SCMWidth, parent.SCMHeight
 				local iconSize = min(width, height)
 				local rowConfig = parent.SCMRowConfig
@@ -113,14 +129,18 @@ local function ApplyCooldownFont(cooldownFrame, options)
 		end
 	end
 
-	local parent = cooldownFrame:GetParent()
-	if parent.SCMConfig then
+	local parent = cooldownFrame.SCMParent or cooldownFrame:GetParent()
+	if parent and parent.SCMConfig then
 		cooldownFrame:SetHideCountdownNumbers(parent.SCMConfig.hideCountdownNumbers)
 	end
 end
 
 local function ApplyCooldownSwipe(cooldownFrame, options)
-	local parent = cooldownFrame:GetParent()
+	local parent = cooldownFrame.SCMParent or cooldownFrame:GetParent()
+	if not parent then
+		return
+	end
+
 	local forceActiveSwipe = parent.SCMConfig and parent.SCMConfig.forceActiveSwipe
 
 	-- [SCM-fork] Swipe direction by icon category, replacing the old global
@@ -178,12 +198,11 @@ local function ApplyCooldownStyle(child, options)
 			child.CooldownFlash:SetAlpha(0)
 		end
 
-		child.Cooldown:ClearAllPoints()
-		child.Cooldown:SetAllPoints()
-		-- if child.SCMCustom then
-		-- 	cooldownFrame:SetPoint("TOPLEFT", child, "TOPLEFT", 0, -SCM:PixelPerfect())
-		-- end
-		-- cooldownFrame:SetPoint("BOTTOMRIGHT", child, "BOTTOMRIGHT", -SCM:PixelPerfect(), SCM:PixelPerfect())
+		cooldownFrame:SetParent(child.SCMCooldownParent)
+		cooldownFrame.SCMParent = child
+		cooldownFrame:ClearAllPoints()
+		cooldownFrame:SetPoint("TOPLEFT", child.SCMCooldownParent, "TOPLEFT", -5, 5)
+		cooldownFrame:SetPoint("BOTTOMRIGHT", child.SCMCooldownParent, "BOTTOMRIGHT", 5, -5)
 		cooldownFrame:SetSwipeTexture("Interface\\Buttons\\WHITE8x8")
 
 		hooksecurefunc(cooldownFrame, "SetCooldown", OnSetCooldown)
@@ -236,11 +255,12 @@ function SCM:SkinChild(child, childConfig)
 	local borderSize = options.borderSize
 	local borderColor = options.borderColor
 
-	if not child.SCMSkinned or (child.SCMSkinned and self.OptionsFrame ~= nil and self.OptionsFrame:IsShown()) then
+	if not child.SCMSkinned or (child.SCMSkinned and self.OptionsFrame and self.OptionsFrame:IsShown()) then
 		child.SCMSkinned = true
 
 		child.customBorder = child.customBorder or CreateFrame("Frame", nil, child, "BackdropTemplate")
 		child.customBorder:SetFrameLevel(child:GetFrameLevel() + 1)
+		child.customBorder:ClearAllPoints()
 		child.customBorder:SetAllPoints(child)
 		child.customBorder:SetBackdrop({
 			edgeFile = "Interface\\Buttons\\WHITE8x8",
@@ -258,6 +278,18 @@ function SCM:SkinChild(child, childConfig)
 			region:SetTexelSnappingBias(0)
 			region:SetSnapToPixelGrid(false)
 		end
+
+		child.SCMCooldownParent = child.SCMCooldownParent or CreateFrame("Frame", nil, child)
+		child.SCMCooldownParent:ClearAllPoints()
+
+		--TODO: How to get the cooldown frame aligned with the visible part of a frame? Please tell me
+		--if child.SCMIconType or child:GetRight() % 1 == 0.5 or (childConfig and childConfig.expCooldownThing)  then
+			child.SCMCooldownParent:SetPoint("TOPLEFT", child, "TOPLEFT", 0, 0)
+			child.SCMCooldownParent:SetPoint("BOTTOMRIGHT", child, "BOTTOMRIGHT", -SCM:PixelPerfectSize(1), SCM:PixelPerfectSize(1))
+		--else
+			--child.SCMCooldownParent:SetAllPoints(child)
+		--end
+		child.SCMCooldownParent:SetClipsChildren(true)
 
 		local textureRegion
 		for _, region in ipairs({ child:GetRegions() }) do
@@ -351,15 +383,16 @@ function SCM:SkinBuffBar(child, config)
 
 		if options.buffBarContent == 2 then
 			bar:SetPoint("TOPLEFT", iconFrame, "TOPLEFT", 0, 0)
+			bar.BarBG:SetPoint("TOPLEFT", iconFrame, "TOPLEFT", 0, 0)
 		else
 			bar:SetPoint("TOPLEFT", iconFrame, "TOPRIGHT", -borderSize, 0)
+			bar.BarBG:SetPoint("TOPLEFT", iconFrame, "TOPRIGHT", -borderSize, 0)
 		end
 
 		bar:SetPoint("BOTTOMLEFT", iconFrame, "BOTTOMRIGHT", -borderSize, 0)
 		bar:SetHeight(iconFrame:GetHeight())
 		bar:SetStatusBarColor(foregroundColor.r, foregroundColor.g, foregroundColor.b, foregroundColor.a)
 		bar.Pip:SetAlpha(0)
-		bar.BarBG:SetPoint("TOPLEFT", iconFrame, "TOPRIGHT", -borderSize, 0)
 		bar.BarBG:SetPoint("BOTTOMLEFT", iconFrame, "BOTTOMRIGHT", -borderSize, 0)
 		bar.BarBG:SetPoint("RIGHT", bar, "RIGHT", 0, 0)
 		bar.BarBG:SetColorTexture(backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a)
@@ -368,6 +401,16 @@ function SCM:SkinBuffBar(child, config)
 		local fontOutline = buffBarOptions.fontOutline or "OUTLINE"
 		bar.Name:SetFont(LSM:Fetch("font", buffBarOptions.font), buffBarOptions.fontSize, fontOutline)
 		bar.Duration:SetFont(LSM:Fetch("font", buffBarOptions.font), buffBarOptions.fontSize, fontOutline)
+
+		local nameColor = buffBarOptions.nameColor
+		bar.Name:ClearPointsOffset()
+		bar.Name:AdjustPointsOffset(buffBarOptions.nameXOffset, buffBarOptions.nameYOffset)
+		bar.Name:SetTextColor(nameColor.r, nameColor.g, nameColor.b, nameColor.a)
+
+		local durationColor = buffBarOptions.durationColor
+		bar.Duration:ClearPointsOffset()
+		bar.Duration:AdjustPointsOffset(buffBarOptions.durationXOffset, buffBarOptions.durationYOffset)
+		bar.Duration:SetTextColor(durationColor.r, durationColor.g, durationColor.b, durationColor.a)
 
 		bar.customBorder = bar.customBorder or CreateFrame("Frame", nil, bar, "BackdropTemplate")
 		bar.customBorder:SetFrameLevel(bar:GetFrameLevel() + 1)
@@ -434,12 +477,8 @@ function SCM:SkinBuffBar(child, config)
 		if iconFrame.Applications then
 			local applications = iconFrame.Applications
 			applications:SetWordWrap(false)
-			if applications.SetNonSpaceWrap then
-				applications:SetNonSpaceWrap(false)
-			end
-			if applications.SetMaxLines then
-				applications:SetMaxLines(1)
-			end
+			applications:SetNonSpaceWrap(false)
+			applications:SetMaxLines(1)
 
 			local size = rowConfig.applicationsFontSize or options.chargeFontSize
 			local outline = rowConfig.applicationsFontOutline or options.chargeFontOutline or "OUTLINE"

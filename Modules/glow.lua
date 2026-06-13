@@ -92,7 +92,7 @@ end
 
 function SCM:RestoreBlizzardGlows()
 	local options = self.db.profile.options
-	for _, viewerName in ipairs({"EssentialCooldownViewer", "UtilityCooldownViewer", "BuffIconCooldownViewer"}) do
+	for _, viewerName in ipairs({ "EssentialCooldownViewer", "UtilityCooldownViewer", "BuffIconCooldownViewer" }) do
 		local viewer = _G[viewerName]
 		if viewer then
 			for _, child in ipairs({ viewer:GetChildren() }) do
