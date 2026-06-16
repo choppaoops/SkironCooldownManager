@@ -9,29 +9,35 @@ function SCM:StartCustomGlow(child)
 	end
 
 	local options = self.db.profile.options
-	if child.SCMGlow and options.glowType == child.SCMGlow then
+	local childConfig = child.SCMConfig
+
+	-- Per-icon glow type override: a buff/icon can opt into its own glow style
+	-- (Pixel/Autocast/Proc/Button) instead of the single global one, mirroring
+	-- the existing per-icon custom glow colour. Falls back to options.glowType.
+	local glowType = (childConfig and childConfig.useCustomGlowType and childConfig.customGlowType) or options.glowType
+
+	if child.SCMGlow and glowType == child.SCMGlow then
 		return
 	end
 
-	if child.SCMGlow and (options.glowType ~= child.SCMGlow or (self.OptionsFrame and self.OptionsFrame:IsVisible())) then
+	if child.SCMGlow and (glowType ~= child.SCMGlow or (self.OptionsFrame and self.OptionsFrame:IsVisible())) then
 		self:StopCustomGlow(child)
 	end
 
-	local childConfig = child.SCMConfig
 	if not childConfig then
 		return
 	end
 
-	local glowTypeOptions = options.glowTypeOptions[options.glowType]
+	local glowTypeOptions = options.glowTypeOptions[glowType]
 	local color = childConfig.useCustomGlowColor and childConfig.customGlowColor or glowTypeOptions.glowColor
-	child.SCMGlow = options.glowType
+	child.SCMGlow = glowType
 
-	if options.glowType == "Proc" then
+	if glowType == "Proc" then
 		LibCustomGlow.ProcGlow_Start(child, { key = "SCM", frameLevel = 1, color = color, startAnim = glowTypeOptions.startAnim, xOffset = glowTypeOptions.xOffset, yOffset = glowTypeOptions.yOffset })
-	elseif options.glowType == "Autocast" then
+	elseif glowType == "Autocast" then
 		-- color,N,frequency,scale,xOffset,yOffset,key,frameLevel
 		LibCustomGlow.AutoCastGlow_Start(child, color, glowTypeOptions.numParticles, glowTypeOptions.frequency, glowTypeOptions.scale, glowTypeOptions.xOffset, glowTypeOptions.yOffset, "SCM", 1)
-	elseif options.glowType == "Pixel" then
+	elseif glowType == "Pixel" then
 		-- N,frequency,length,th,xOffset,yOffset,border
 		LibCustomGlow.PixelGlow_Start(
 			child,
@@ -46,7 +52,7 @@ function SCM:StartCustomGlow(child)
 			"SCM",
 			1
 		)
-	elseif options.glowType == "Button" then
+	elseif glowType == "Button" then
 		LibCustomGlow.ButtonGlow_Start(child, color, glowTypeOptions.frequency)
 	end
 

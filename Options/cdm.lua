@@ -1848,6 +1848,37 @@ local function SelectAnchor(widget, parentWidget, anchorIndex, anchorTabsTbl, mo
 										buttonConfig.customGlowColor = { r, g, b, a }
 									end)
 									iconSettingsTabs:AddChild(customGlowColor)
+
+									local useCustomGlowType = AceGUI:Create("CheckBox")
+									useCustomGlowType:SetLabel("Use Custom Glow Type")
+									useCustomGlowType:SetRelativeWidth(0.5)
+									useCustomGlowType:SetValue(buttonConfig.useCustomGlowType)
+									useCustomGlowType:SetDisabled(not options.useCustomGlow)
+									SCM.Utils.SetDisabledTooltip(useCustomGlowType, "Enable 'Use Custom Glow' in Global Settings > Glow first.")
+									useCustomGlowType:SetCallback("OnValueChanged", function(self, event, value)
+										buttonConfig.useCustomGlowType = value or nil
+										ApplyIconConfigUpdate()
+										SCM:RefreshAllGlows()
+									end)
+									iconSettingsTabs:AddChild(useCustomGlowType)
+
+									local customGlowType = AceGUI:Create("Dropdown")
+									customGlowType:SetRelativeWidth(0.33)
+									customGlowType:SetLabel("Glow Type")
+									customGlowType:SetList({
+										["Pixel"] = "Pixel Glow",
+										["Autocast"] = "Autocast Glow",
+										["Proc"] = "Proc Glow",
+										["Button"] = "Button",
+									})
+									customGlowType:SetValue(buttonConfig.customGlowType or options.glowType or "Pixel")
+									customGlowType:SetDisabled(not options.useCustomGlow)
+									customGlowType:SetCallback("OnValueChanged", function(self, event, value)
+										buttonConfig.customGlowType = value
+										ApplyIconConfigUpdate()
+										SCM:RefreshAllGlows()
+									end)
+									iconSettingsTabs:AddChild(customGlowType)
 								end
 
 								if buttonData.iconType == "spell" or buttonData.iconType == "timer" or buttonData.iconType == "bloodlust" then
