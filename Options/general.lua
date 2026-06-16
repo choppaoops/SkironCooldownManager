@@ -158,6 +158,18 @@ local function AddCustomGlowOptions(dynamicGlowSettingsGroup)
 			glowTypeOptions.border = value
 		end)
 		dynamicGlowSettingsGroup:AddChild(border)
+	elseif options.glowType == "Button" then
+		local frequency = AceGUI:Create("Slider")
+		frequency:SetRelativeWidth(0.33)
+		frequency:SetValue(glowTypeOptions.frequency or 0.125)
+		frequency:SetLabel("Frequency")
+		frequency:SetSliderValues(-3, 3, 0.05)
+		frequency:SetCallback("OnValueChanged", function(self, event, value)
+			glowTypeOptions.frequency = value
+		end)
+		dynamicGlowSettingsGroup:AddChild(frequency)
+
+		AddGlowColorOption(dynamicGlowSettingsGroup, glowTypeOptions)
 	end
 end
 
@@ -906,6 +918,7 @@ local function SelectGlobalSettingsTab(tabWidget, group, options)
 			["Pixel"] = "Pixel Glow",
 			["Autocast"] = "Autocast Glow",
 			["Proc"] = "Proc Glow",
+			["Button"] = "Button",
 		})
 		glowSettings:AddChild(glowType)
 
