@@ -158,9 +158,9 @@ SCM.DefaultDB = {
 					glowColor = { 0.95, 0.95, 0.32, 1 },
 				},
 				["Button"] = {
-					frequency = 0.125,
 					glowColor = { 0.95, 0.95, 0.32, 1 },
-				},
+					frequency = 0.125,
+				}
 			},
 			buffBarOptions = {
 				barTexture = "Solid",
