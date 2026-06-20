@@ -190,6 +190,7 @@ function Cooldowns.SetNormalCooldown(self, parent)
 
 	local durationObject
 	local desaturate = false
+	local isChargeCooldown = false
 
 	local spellID = FindSpellOverrideByID(parent.SCMSpellID)
 	local spellCooldown = C_Spell.GetSpellCooldown(spellID)
@@ -201,6 +202,7 @@ function Cooldowns.SetNormalCooldown(self, parent)
 	if cooldownData.charges and not durationObject then
 		local spellCharges = C_Spell.GetSpellCharges(spellID)
 		if spellCharges and spellCharges.isActive and not spellCharges.isOnGCD then
+			isChargeCooldown = true
 			durationObject = C_Spell.GetSpellChargeDuration(spellID, true)
 		end
 	end
@@ -209,7 +211,15 @@ function Cooldowns.SetNormalCooldown(self, parent)
 		self:Clear()
 		parent.Icon.SCMDesaturated = desaturate
 		parent.Icon:SetDesaturated(desaturate)
-		self:SetCooldownFromDurationObject(durationObject)
+		if isChargeCooldown then
+			self:SetDrawEdge(true)
+			self:SetDrawSwipe(false)
+			self:SetCooldownFromDurationObject(durationObject)
+		else
+			self:SetDrawEdge(false)
+			self:SetDrawSwipe(true)
+			self:SetCooldownFromDurationObject(durationObject)
+		end
 	else
 		parent.Icon.SCMDesaturated = nil
 		parent.Icon:SetDesaturated(false)
