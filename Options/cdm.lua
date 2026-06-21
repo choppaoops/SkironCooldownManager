@@ -257,7 +257,7 @@ local presetButtonConfigs = {
 			},
 		},
 		{
-			text = "|T7636709:16:16|t Light Company Guldon",
+			text = "|T7636709:16:16|t Light Company Guidon",
 			configID = 1259633,
 			iconType = "timer",
 			buildIconData = BuildSpellIconData,
