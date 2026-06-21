@@ -220,13 +220,65 @@ local customButtonConfigs = {
 
 local presetButtonConfigs = {
 	{
-		text = "Bloodlust",
+		text = "|T136012:16:16|t Bloodlust (Timer)",
 		configID = 2825,
 		iconType = "bloodlust",
 		buildIconData = BuildSpellIconData,
 		config = {
 			duration = 40,
 		},
+	},
+	-- Silvermoon Health Potion (Default: Rank 3, Filter: Rank 1)
+	{
+		text = "|T7548909:16:16|t Silvermoon Health Potion (Item)",
+		configID = 241304,
+		iconType = "item",
+		buildIconData = BuildItemIconData,
+		config = {
+			customItems = {
+				[1] = 241305
+			}
+		}
+	},
+	-- Healthstone (Default: Healthstone, Filter: Demonic Healthstone)
+	{
+		text = "|T538745:16:16|t Healthstone (Item)",
+		configID = 5512,
+		iconType = "item",
+		buildIconData = BuildItemIconData,
+		config = {
+			customItems = {
+				[1] = 224464,
+			}
+		}
+	},
+	-- Light's Potential (Default: Fleeting Rank 3, Filter: Fleeting Rank 1 > Rank 3 > Rank 2)
+	{
+		text = "|T7548911:16:16|t Light's Potential (Item)",
+		configID = 245898,
+		iconType = "item",
+		buildIconData = BuildItemIconData,
+		config = {
+			customItems = {
+				[1] = 245897,
+				[2] = 241308,
+				[3] = 241309
+			}
+		}
+	},
+	-- Potion of Recklessness (Default: Fleeting Rank 3, Filter: Fleeting Rank 1 > Rank 3 > Rank 2)
+	{
+		text = "|T7548916:16:16|t Potion of Recklessness (Item)",
+		configID = 245902,
+		iconType = "item",
+		buildIconData = BuildItemIconData,
+		config = {
+			customItems = {
+				[1] = 245903,
+				[2] = 241288,
+				[3] = 241289
+			}
+		}
 	},
 }
 
