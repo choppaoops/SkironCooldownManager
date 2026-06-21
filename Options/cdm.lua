@@ -1005,6 +1005,16 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, an
 			ApplyModeConfigUpdate(anchorIndex, mode)
 		end)
 		self:AddChild(truncateWhenZero)
+
+		local chargeColour = AceGUI:Create("ColorPicker")
+		chargeColour:SetLabel("Colour")
+		chargeColour:SetRelativeWidth(0.33)
+		chargeColour:SetColor(rowConfig.chargeColour.r, rowConfig.chargeColour.g, rowConfig.chargeColour.b, rowConfig.chargeColour.a or 1)
+		chargeColour:SetCallback("OnValueChanged", function(_, _, r, g, b, a)
+			rowConfig.chargeColour = { r = r, g = g, b = b, a = a }
+			ApplyModeConfigUpdate(anchorIndex, mode)
+		end)
+		self:AddChild(chargeColour)
 	elseif tabGroup == "applications" then
 		local applicationsPoint = AceGUI:Create("Dropdown")
 		applicationsPoint:SetRelativeWidth(0.5)
