@@ -770,6 +770,9 @@ local function CreateAddSpellDropdown(owner, rootDescription, scrollFrame, ancho
 	local presetButton = rootDescription:CreateButton("Presets")
 	CreateCustomIconButtons(presetButton, scrollFrame, anchorIndex, false, presetButtonConfigs)
 
+	local timersButton = presetButton:CreateButton("|T237538:16:16|t Timers")
+	CreateCustomIconButtons(timersButton, scrollFrame, anchorIndex, true, presetButtonConfigs["TIMERS"])
+
 	-- local racialButton = presetButton:CreateButton("|T135727:16:16|t Racials")
 	-- CreateCustomIconButtons(racialButton, scrollFrame, anchorIndex, false, presetButtonConfigs["RACIALS"])
 
