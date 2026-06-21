@@ -252,7 +252,7 @@ local presetButtonConfigs = {
 			}
 		}
 	},
-	-- Light's Potential (Default: Fleeting Rank 3, Filter: Fleeting Rank 1 > Rank 3 > Rank 2)
+	-- Light's Potential (Default: Fleeting Rank 3, Filter: Fleeting Rank 1 > Rank 3 > Rank 1)
 	{
 		text = "|T7548911:16:16|t Light's Potential (Item)",
 		configID = 245898,
@@ -266,7 +266,7 @@ local presetButtonConfigs = {
 			}
 		}
 	},
-	-- Potion of Recklessness (Default: Fleeting Rank 3, Filter: Fleeting Rank 1 > Rank 3 > Rank 2)
+	-- Potion of Recklessness (Default: Fleeting Rank 3, Filter: Fleeting Rank 1 > Rank 3 > Rank 1)
 	{
 		text = "|T7548916:16:16|t Potion of Recklessness (Item)",
 		configID = 245902,
@@ -368,6 +368,39 @@ local presetButtonConfigs = {
 			config = {
 				useLoadRace = true,
 				loadRaces = { [6] = true },
+			}
+		},
+		-- Wing Buffet
+		{
+			text = "|T4622488:16:16|t Wing Buffet",
+			configID = 357214,
+			iconType = "spell",
+			buildIconData = BuildSpellIconData,
+			config = {
+				useLoadRace = true,
+				loadRaces = { [52] = true, [70] = true, },
+			}
+		},
+		-- Bull Rush
+		{
+			text = "|T1723987:16:16|t Bull Rush",
+			configID = 255654,
+			iconType = "spell",
+			buildIconData = BuildSpellIconData,
+			config = {
+				useLoadRace = true,
+				loadRaces = { [28] = true },
+			}
+		},
+		-- Escape Artist
+		{
+			text = "|T132309:16:16|t Escape Artist",
+			configID = 20589,
+			iconType = "spell",
+			buildIconData = BuildSpellIconData,
+			config = {
+				useLoadRace = true,
+				loadRaces = { [7] = true },
 			}
 		},
 	}
