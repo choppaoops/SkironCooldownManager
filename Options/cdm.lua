@@ -232,16 +232,16 @@ local presetButtonConfigs = {
 		{
 			text = "|T7548911:16:16|t Light's Potential",
 			configID = 1236616,
-			iconType = "spell",
+			iconType = "timer",
 			buildIconData = BuildSpellIconData,
 			config = {
 				duration = 30,
 			},
 		},
 		{
-			text = "|T754891616:16|t Potion of Recklessness",
+			text = "|T7548916:16:16|t Potion of Recklessness",
 			configID = 1236994,
-			iconType = "spell",
+			iconType = "timer",
 			buildIconData = BuildSpellIconData,
 			config = {
 				duration = 30,
@@ -771,7 +771,7 @@ local function CreateAddSpellDropdown(owner, rootDescription, scrollFrame, ancho
 	CreateCustomIconButtons(presetButton, scrollFrame, anchorIndex, false, presetButtonConfigs)
 
 	local timersButton = presetButton:CreateButton("|T237538:16:16|t Timers")
-	CreateCustomIconButtons(timersButton, scrollFrame, anchorIndex, true, presetButtonConfigs["TIMERS"])
+	CreateCustomIconButtons(timersButton, scrollFrame, anchorIndex, false, presetButtonConfigs["TIMERS"])
 
 	-- local racialButton = presetButton:CreateButton("|T135727:16:16|t Racials")
 	-- CreateCustomIconButtons(racialButton, scrollFrame, anchorIndex, false, presetButtonConfigs["RACIALS"])
