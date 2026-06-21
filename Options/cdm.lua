@@ -725,8 +725,8 @@ local function CreateAddSpellDropdown(owner, rootDescription, scrollFrame, ancho
 	local presetButton = rootDescription:CreateButton("Presets")
 	CreateCustomIconButtons(presetButton, scrollFrame, anchorIndex, false, presetButtonConfigs)
 
-	local racialButton = presetButton:CreateButton("|T135727:16:16|t Racials")
-	CreateCustomIconButtons(racialButton, scrollFrame, anchorIndex, false, presetButtonConfigs["RACIALS"])
+	-- local racialButton = presetButton:CreateButton("|T135727:16:16|t Racials")
+	-- CreateCustomIconButtons(racialButton, scrollFrame, anchorIndex, false, presetButtonConfigs["RACIALS"])
 
 	if CreateCategoryObjectLookup and CooldownViewerSettingsDataProvider_GetCategories then
 		local copyFromButton = rootDescription:CreateButton("Copy From")
