@@ -1,6 +1,7 @@
 local SCM = select(2, ...)
 local Options = SCM.Options
 local CDMOptions = Options.CDM
+local AceGUI = LibStub("AceGUI-3.0")
 
 StaticPopupDialogs["SCM_CONFIRM_COPY_ANCHORS"] = {
 	text = "Copy anchor configuration from |cFFFFFFFF%s|r?\n\nThis will overwrite the current anchor layout for |cFFFFFFFF%s|r.",

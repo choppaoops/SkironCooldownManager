@@ -1,6 +1,7 @@
 local SCM = select(2, ...)
 local Options = SCM.Options
 local CDMOptions = Options.CDM
+local AceGUI = LibStub("AceGUI-3.0")
 
 local function SortByIndex(a, b)
 	return a.dataIndex < b.dataIndex
@@ -108,7 +109,7 @@ local function GetSpellsForAnchor(anchorIndex, currentAnchorIndex, isGlobal, isB
 	return spells
 end
 
-function CDMOptions.CreateSpellConfigScrollFrame(anchorIndex, mode)
+function CDMOptions.CreateSpellConfigScrollFrame(anchorIndex, mode, spellConfigTab, anchorOptions, parentScrollFrame)
 	local currentAnchorIndex = Options.GetEffectiveAnchorGroup(anchorIndex, mode)
 	local isGlobal = mode == "global"
 	local isBuffBar = mode == "buffbars"
@@ -142,9 +143,6 @@ function CDMOptions.CreateSpellConfigScrollFrame(anchorIndex, mode)
 	iconSettings:SetFullWidth(true)
 	iconSettings:SetHeight(120)
 	iconSettings:SetTitle("")
-	scrollFrame:AddChild(iconSettings)
-
-	CDMOptions.ShowIconSettingsMessage(iconSettings, scrollFrame, "|TInterface\\common\\help-i:40:40:0:0|tClick on an icon above to show spell specific options.")
 
 	local lastButtonFrame
 	scrollFrame:SetCallback("OnGroupSelected", function(_, _, buttonFrame, button)
@@ -161,14 +159,17 @@ function CDMOptions.CreateSpellConfigScrollFrame(anchorIndex, mode)
 				end)
 			else
 				if not lastButtonFrame or lastButtonFrame ~= buttonFrame then
-					lastButtonFrame = CDMOptions.CreateSpellConfigTabs(scrollFrame, iconSettings, buttonFrame, lastButtonFrame, anchorIndex, mode, isGlobal, isBuffBar)
+					lastButtonFrame = CDMOptions.CreateSpellConfigTabs(parentScrollFrame, iconSettings, buttonFrame, anchorIndex, mode, isGlobal, isBuffBar)
 				else
 					lastButtonFrame:SetBackdropBorderColor(BLACK_FONT_COLOR:GetRGBA())
 					lastButtonFrame = nil
 
-					CDMOptions.ShowIconSettingsMessage(iconSettings, scrollFrame, "|TInterface\\common\\help-i:40:40:0:0|tClick on an icon to show spell specific options.")
+					CDMOptions.ShowIconSettingsMessage(iconSettings, spellConfigTab, "|TInterface\\common\\help-i:40:40:0:0|tClick on an icon to show spell specific options.")
 				end
 			end
+
+			spellConfigTab:DoLayout()
+			anchorOptions:DoLayout()
 		elseif button == "RightButton" and not buttonFrame.data.isAddButton then
 			local menu = MenuUtil.CreateContextMenu(nil, function(owner, rootDescription)
 				rootDescription:CreateButton("Remove", function()
@@ -214,5 +215,15 @@ function CDMOptions.CreateSpellConfigScrollFrame(anchorIndex, mode)
 			end
 		end
 		Options.ApplyModeConfigUpdate(anchorIndex, mode)
+	end)
+
+	spellConfigTab:AddChild(scrollFrame)
+	spellConfigTab:AddChild(iconSettings)
+
+	CDMOptions.ShowIconSettingsMessage(iconSettings, spellConfigTab, "|TInterface\\common\\help-i:40:40:0:0|tClick on an icon above to show spell specific options.")
+
+	RunNextFrame(function()
+		scrollFrame.scrollbar:ScrollToEnd()
+		scrollFrame.scrollbar:ScrollToBegin()
 	end)
 end

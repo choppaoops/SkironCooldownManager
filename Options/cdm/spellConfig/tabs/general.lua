@@ -1,8 +1,9 @@
 local SCM = select(2, ...)
 local Options = SCM.Options
 local CDMOptions = Options.CDM
+local AceGUI = LibStub("AceGUI-3.0")
 
-function CDMOptions.CreateGeneralTabSettings(parentWidget, iconSettings, buttonFrame, buttonData, buttonConfig, anchorIndex, mode, isGlobal, isBuffBar)
+function CDMOptions.CreateGeneralTabSettings(iconSettingsTabs, iconSettings, scrollFrame, buttonFrame, buttonData, buttonConfig, anchorIndex, mode, isGlobal, isBuffBar)
 	if buttonData.spellID and buttonData.spellID > 0 then
 		iconSettings:SetTitle(C_Spell.GetSpellName(buttonData.spellID))
 	elseif buttonData.itemID then
@@ -20,7 +21,7 @@ function CDMOptions.CreateGeneralTabSettings(parentWidget, iconSettings, buttonF
 			alwaysShow:SetValue(buttonConfig.alwaysShow)
 			alwaysShow:SetDisabled((not buttonData.isCustom and not options.hideBuffsWhenInactive) or buttonConfig.showWhileInactive)
 			SCM.Utils.SetDisabledTooltip(alwaysShow, "Enable \"Disable 'Hide Inactive Auras'\" in Global Settings > General > Auras first or disable 'Show While Inactive'.")
-			parentWidget:AddChild(alwaysShow)
+			iconSettingsTabs:AddChild(alwaysShow)
 			alwaysShow:SetCallback("OnValueChanged", function(self, event, value)
 				buttonConfig.alwaysShow = value
 
@@ -43,7 +44,7 @@ function CDMOptions.CreateGeneralTabSettings(parentWidget, iconSettings, buttonF
 			showWhileInactive:SetValue(buttonConfig.showWhileInactive)
 			showWhileInactive:SetDisabled(not options.hideBuffsWhenInactive or buttonConfig.alwaysShow)
 			SCM.Utils.SetDisabledTooltip(showWhileInactive, "Enable \"Disable 'Hide Inactive Auras'\" in Global Settings > General > Auras first or disable 'Show Always'.")
-			parentWidget:AddChild(showWhileInactive)
+			iconSettingsTabs:AddChild(showWhileInactive)
 			showWhileInactive:SetCallback("OnValueChanged", function(self, event, value)
 				buttonConfig.showWhileInactive = value
 				CDMOptions.ApplyIconConfigUpdate(buttonFrame, buttonData, anchorIndex, mode, isGlobal, isBuffBar)
@@ -66,7 +67,7 @@ function CDMOptions.CreateGeneralTabSettings(parentWidget, iconSettings, buttonF
 				buttonConfig.hideWhileMounted = value or nil
 				CDMOptions.ApplyIconConfigUpdate(buttonFrame, buttonData, anchorIndex, mode, isGlobal, isBuffBar)
 			end)
-			parentWidget:AddChild(hideWhileMounted)
+			iconSettingsTabs:AddChild(hideWhileMounted)
 
 			desaturate = AceGUI:Create("CheckBox")
 			desaturate:SetLabel("Desaturate While Inactive")
@@ -78,7 +79,7 @@ function CDMOptions.CreateGeneralTabSettings(parentWidget, iconSettings, buttonF
 				buttonConfig.desaturate = value or nil
 				CDMOptions.ApplyIconConfigUpdate(buttonFrame, buttonData, anchorIndex, mode, isGlobal, isBuffBar)
 			end)
-			parentWidget:AddChild(desaturate)
+			iconSettingsTabs:AddChild(desaturate)
 		elseif buttonData.iconType ~= "timer" then
 			local hideWhileReady = AceGUI:Create("CheckBox")
 			hideWhileReady:SetLabel("Hide While Ready")
@@ -88,7 +89,7 @@ function CDMOptions.CreateGeneralTabSettings(parentWidget, iconSettings, buttonF
 				buttonConfig.hideWhenNotOnCooldown = value or nil
 				CDMOptions.ApplyIconConfigUpdate(buttonFrame, buttonData, anchorIndex, mode, isGlobal, isBuffBar)
 			end)
-			parentWidget:AddChild(hideWhileReady)
+			iconSettingsTabs:AddChild(hideWhileReady)
 
 			if buttonData.isCustom then
 				local showGCD = AceGUI:Create("CheckBox")
@@ -99,7 +100,7 @@ function CDMOptions.CreateGeneralTabSettings(parentWidget, iconSettings, buttonF
 					buttonConfig.showGCD = value or nil
 					CDMOptions.ApplyIconConfigUpdate(buttonFrame, buttonData, anchorIndex, mode, isGlobal, isBuffBar)
 				end)
-				parentWidget:AddChild(showGCD)
+				iconSettingsTabs:AddChild(showGCD)
 
 				if buttonData.iconType == "item" then
 					local showCraftQuality = AceGUI:Create("CheckBox")
@@ -110,7 +111,7 @@ function CDMOptions.CreateGeneralTabSettings(parentWidget, iconSettings, buttonF
 						buttonConfig.showCraftQuality = value or nil
 						CDMOptions.ApplyIconConfigUpdate(buttonFrame, buttonData, anchorIndex, mode, isGlobal, isBuffBar)
 					end)
-					parentWidget:AddChild(showCraftQuality)
+					iconSettingsTabs:AddChild(showCraftQuality)
 
 					local hideStackText = AceGUI:Create("CheckBox")
 					hideStackText:SetLabel("Hide Count")
@@ -120,7 +121,7 @@ function CDMOptions.CreateGeneralTabSettings(parentWidget, iconSettings, buttonF
 						buttonConfig.hideStackText = value or nil
 						CDMOptions.ApplyIconConfigUpdate(buttonFrame, buttonData, anchorIndex, mode, isGlobal, isBuffBar)
 					end)
-					parentWidget:AddChild(hideStackText)
+					iconSettingsTabs:AddChild(hideStackText)
 				elseif buttonData.iconType == "spell" then
 					local showNotUsable = AceGUI:Create("CheckBox")
 					showNotUsable:SetLabel("Show Not Usable")
@@ -130,7 +131,7 @@ function CDMOptions.CreateGeneralTabSettings(parentWidget, iconSettings, buttonF
 						buttonConfig.showNotUsable = value or nil
 						CDMOptions.ApplyIconConfigUpdate(buttonFrame, buttonData, anchorIndex, mode, isGlobal, isBuffBar)
 					end)
-					parentWidget:AddChild(showNotUsable)
+					iconSettingsTabs:AddChild(showNotUsable)
 
 					local showOutOfRange = AceGUI:Create("CheckBox")
 					showOutOfRange:SetLabel("Show Out Of Range")
@@ -141,7 +142,7 @@ function CDMOptions.CreateGeneralTabSettings(parentWidget, iconSettings, buttonF
 						C_Spell.EnableSpellRangeCheck(buttonData.spellID, value)
 						CDMOptions.ApplyIconConfigUpdate(buttonFrame, buttonData, anchorIndex, mode, isGlobal, isBuffBar)
 					end)
-					parentWidget:AddChild(showOutOfRange)
+					iconSettingsTabs:AddChild(showOutOfRange)
 
 					local forceShowCharges = AceGUI:Create("CheckBox")
 					forceShowCharges:SetLabel("Force Show Charges")
@@ -151,7 +152,7 @@ function CDMOptions.CreateGeneralTabSettings(parentWidget, iconSettings, buttonF
 						buttonConfig.forceShowCharges = value
 						CDMOptions.ApplyIconConfigUpdate(buttonFrame, buttonData, anchorIndex, mode, isGlobal, isBuffBar)
 					end)
-					parentWidget:AddChild(forceShowCharges)
+					iconSettingsTabs:AddChild(forceShowCharges)
 				end
 			else
 				local forceActiveSwipe = AceGUI:Create("CheckBox")
@@ -162,7 +163,7 @@ function CDMOptions.CreateGeneralTabSettings(parentWidget, iconSettings, buttonF
 					buttonConfig.forceActiveSwipe = value or nil
 					CDMOptions.ApplyIconConfigUpdate(buttonFrame, buttonData, anchorIndex, mode, isGlobal, isBuffBar)
 				end)
-				parentWidget:AddChild(forceActiveSwipe)
+				iconSettingsTabs:AddChild(forceActiveSwipe)
 			end
 		end
 
@@ -177,7 +178,7 @@ function CDMOptions.CreateGeneralTabSettings(parentWidget, iconSettings, buttonF
 				CDMOptions.ApplyIconConfigUpdate(buttonFrame, buttonData, anchorIndex, mode, isGlobal, isBuffBar)
 			end)
 
-			parentWidget:AddChild(castTimer)
+			iconSettingsTabs:AddChild(castTimer)
 		end
 
 		local hideCountdownNumbers = AceGUI:Create("CheckBox")
@@ -188,7 +189,7 @@ function CDMOptions.CreateGeneralTabSettings(parentWidget, iconSettings, buttonF
 			buttonConfig.hideCountdownNumbers = value or nil
 			CDMOptions.ApplyIconConfigUpdate(buttonFrame, buttonData, anchorIndex, mode, isGlobal, isBuffBar)
 		end)
-		parentWidget:AddChild(hideCountdownNumbers)
+		iconSettingsTabs:AddChild(hideCountdownNumbers)
 	else
 		local customColor = AceGUI:Create("ColorPicker")
 		customColor:SetRelativeWidth(0.5)
@@ -201,6 +202,6 @@ function CDMOptions.CreateGeneralTabSettings(parentWidget, iconSettings, buttonF
 			buttonConfig.customColor = { r = r, g = g, b = b, a = a }
 			SCM:SkinBuffBars()
 		end)
-		parentWidget:AddChild(customColor)
+		iconSettingsTabs:AddChild(customColor)
 	end
 end

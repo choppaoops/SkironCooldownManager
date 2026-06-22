@@ -231,7 +231,7 @@ local function ProcessAndCreateButtons(parentButton, items, isBuffIcon, scrollFr
 				if not SCM:IsSpellInData(info.cooldownID, info.category) and not DoesScrollFrameContainSpellConfig(scrollFrame, info.configID, info.cooldownID) then
 					local dataIndex = scrollFrame:AddSpellBySpellID(info)
 					SCM:AddSpellToConfig(anchorIndex, dataIndex, info, data, item.targetCategory, isBuffIcon)
-					ApplyModeConfigUpdate(anchorIndex, mode)
+					Options.ApplyModeConfigUpdate(anchorIndex, mode)
 				end
 				return MenuResponse.Open
 			end, info)
@@ -349,7 +349,7 @@ local function CreateCopyButtons(rootDescription, scrollFrame, anchorIndex, mode
 						end
 					end
 
-					ApplyModeConfigUpdate(anchorIndex, mode)
+					Options.ApplyModeConfigUpdate(anchorIndex, mode)
 				end)
 			end
 		end

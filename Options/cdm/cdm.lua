@@ -43,9 +43,9 @@ local function CDM(self, frame, group)
 	modeTabs:SetTabs(tabs)
 	modeTabs:SetCallback("OnGroupSelected", function(widget, event, mode)
 		if mode == "copy" then
-			CreateCopyAnchorTab(widget, frame, modeTabs)
+			CDMOptions.CreateCopyAnchorTab(widget, frame, modeTabs)
 		else
-			CreateAnchorTabGroup(widget, frame, mode)
+			CDMOptions.CreateAnchorTabGroup(widget, frame, mode)
 		end
 	end)
 	modeTabs:SelectTab("spec")

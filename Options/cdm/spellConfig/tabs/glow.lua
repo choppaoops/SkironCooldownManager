@@ -1,8 +1,11 @@
 local SCM = select(2, ...)
 local Options = SCM.Options
 local CDMOptions = Options.CDM
+local AceGUI = LibStub("AceGUI-3.0")
 
-function CDMOptions.CreateGlowTabSettings(iconSettingsTabs, iconSettings, buttonFrame, buttonData, buttonConfig, anchorIndex, mode, isGlobal, isBuffBar)
+function CDMOptions.CreateGlowTabSettings(iconSettingsTabs, iconSettings, scrollFrame, buttonFrame, buttonData, buttonConfig, anchorIndex, mode, isGlobal, isBuffBar)
+	local options = SCM.db.profile.options
+
 	if not buttonData.isCustom and buttonData.iconType == "spell" then
 		local useCustomGlowColor = AceGUI:Create("CheckBox")
 		useCustomGlowColor:SetLabel("Use Custom Glow Color")

@@ -1,16 +1,7 @@
 local SCM = select(2, ...)
 local Options = SCM.Options
 local CDMOptions = Options.CDM
-
-local function SelectAdvancedConfig(self, widget, parentWidget, scrollFrame, data, anchorIndex, configType, mode, options, isProfileConfig)
-	self:ReleaseChildren()
-
-	if configType == "rowConfig" then
-		CDMOptions.CreateRowConfig(self, widget, parentWidget, scrollFrame, data, anchorIndex, mode, options, isProfileConfig)
-	elseif configType == "spellConfig" then
-		CDMOptions.CreateSpellConfig()
-	end
-end
+local AceGUI = LibStub("AceGUI-3.0")
 
 function CDMOptions.SelectAnchor(widget, parentWidget, anchorIndex, anchorTabsTbl, mode)
 	widget:ReleaseChildren()
@@ -23,11 +14,11 @@ function CDMOptions.SelectAnchor(widget, parentWidget, anchorIndex, anchorTabsTb
 
 	if options.showAnchorHighlight then
 		for group, anchorFrame in pairs(SCM.anchorFrames) do
-			local activeGroup = GetEffectiveAnchorGroup(anchorIndex, mode)
+			local activeGroup = Options.GetEffectiveAnchorGroup(anchorIndex, mode)
 			if group == activeGroup then
-				SetAnchorHighlight(anchorFrame, "active", { 0.34, 0.70, 0.91, 1 })
+				Options.SetAnchorHighlight(anchorFrame, "active", { 0.34, 0.70, 0.91, 1 })
 			else
-				SetAnchorHighlight(anchorFrame, "default")
+				Options.SetAnchorHighlight(anchorFrame, "default")
 			end
 		end
 	end
@@ -95,7 +86,7 @@ function CDMOptions.SelectAnchor(widget, parentWidget, anchorIndex, anchorTabsTb
 	addAnchorButton:SetDisabled(#anchorTabsTbl >= 15)
 	addAnchorButton:SetCallback("OnClick", function()
 		local nextIndex = (isGlobal and SCM:AddGlobalAnchor(anchorTabsTbl)) or (isBuffBar and SCM:AddBuffBarAnchor(anchorTabsTbl)) or SCM:AddAnchor(anchorTabsTbl)
-		ApplyModeConfigUpdate(nextIndex, mode)
+		Options.ApplyModeConfigUpdate(nextIndex, mode)
 		widget:SetTabs(anchorTabsTbl)
 		widget:SelectTab(nextIndex)
 	end)
@@ -144,7 +135,7 @@ function CDMOptions.SelectAnchor(widget, parentWidget, anchorIndex, anchorTabsTb
 			if value then
 				GetProfileAnchorConfig()
 			end
-			ApplyModeConfigUpdate(anchorIndex, mode)
+			Options.ApplyModeConfigUpdate(anchorIndex, mode)
 
 			widget:SelectTab(anchorIndex)
 		end)
@@ -167,7 +158,7 @@ function CDMOptions.SelectAnchor(widget, parentWidget, anchorIndex, anchorTabsTb
 	point:SetValue(data.anchor[1])
 	point:SetCallback("OnValueChanged", function(self, event, value)
 		data.anchor[1] = value
-		ApplyModeConfigUpdate(anchorIndex, mode)
+		Options.ApplyModeConfigUpdate(anchorIndex, mode)
 	end)
 	anchorOptions:AddChild(point)
 
@@ -177,7 +168,7 @@ function CDMOptions.SelectAnchor(widget, parentWidget, anchorIndex, anchorTabsTb
 	relativeTo:SetText(data.anchor[2])
 	relativeTo:SetCallback("OnEnterPressed", function(self, event, text)
 		data.anchor[2] = text
-		ApplyModeConfigUpdate(anchorIndex, mode)
+		Options.ApplyModeConfigUpdate(anchorIndex, mode)
 	end)
 	anchorOptions:AddChild(relativeTo)
 
@@ -188,7 +179,7 @@ function CDMOptions.SelectAnchor(widget, parentWidget, anchorIndex, anchorTabsTb
 	relativePoint:SetValue(data.anchor[3])
 	relativePoint:SetCallback("OnValueChanged", function(self, event, value)
 		data.anchor[3] = value
-		ApplyModeConfigUpdate(anchorIndex, mode)
+		Options.ApplyModeConfigUpdate(anchorIndex, mode)
 	end)
 	anchorOptions:AddChild(relativePoint)
 
@@ -199,7 +190,7 @@ function CDMOptions.SelectAnchor(widget, parentWidget, anchorIndex, anchorTabsTb
 		matchAnchorWidth:SetValue(data.matchAnchorWidth or false)
 		matchAnchorWidth:SetCallback("OnValueChanged", function(_, _, value)
 			data.matchAnchorWidth = value
-			ApplyModeConfigUpdate(anchorIndex, mode)
+			Options.ApplyModeConfigUpdate(anchorIndex, mode)
 			widget:SelectTab(anchorIndex)
 		end)
 		anchorOptions:AddChild(matchAnchorWidth)
@@ -212,7 +203,7 @@ function CDMOptions.SelectAnchor(widget, parentWidget, anchorIndex, anchorTabsTb
 	grow:SetValue(data.grow or "CENTERED")
 	grow:SetCallback("OnValueChanged", function(self, event, value)
 		data.grow = value
-		ApplyModeConfigUpdate(anchorIndex, mode)
+		Options.ApplyModeConfigUpdate(anchorIndex, mode)
 	end)
 	anchorOptions:AddChild(grow)
 
@@ -223,7 +214,7 @@ function CDMOptions.SelectAnchor(widget, parentWidget, anchorIndex, anchorTabsTb
 	secondaryGrow:SetValue(data.secondaryGrow or "DOWN")
 	secondaryGrow:SetCallback("OnValueChanged", function(self, event, value)
 		data.secondaryGrow = value
-		ApplyModeConfigUpdate(anchorIndex, mode)
+		Options.ApplyModeConfigUpdate(anchorIndex, mode)
 	end)
 	anchorOptions:AddChild(secondaryGrow)
 
@@ -234,7 +225,7 @@ function CDMOptions.SelectAnchor(widget, parentWidget, anchorIndex, anchorTabsTb
 	spacing:SetValue(data.spacing or 0)
 	spacing:SetCallback("OnValueChanged", function(self, event, value)
 		data.spacing = value
-		ApplyModeConfigUpdate(anchorIndex, mode)
+		Options.ApplyModeConfigUpdate(anchorIndex, mode)
 	end)
 	anchorOptions:AddChild(spacing)
 
@@ -245,7 +236,7 @@ function CDMOptions.SelectAnchor(widget, parentWidget, anchorIndex, anchorTabsTb
 	frameStrata:SetValue(data.frameStrata or "")
 	frameStrata:SetCallback("OnValueChanged", function(self, event, value)
 		data.frameStrata = value ~= "" and value or nil
-		ApplyModeConfigUpdate(anchorIndex, mode)
+		Options.ApplyModeConfigUpdate(anchorIndex, mode)
 	end)
 	anchorOptions:AddChild(frameStrata)
 
@@ -256,7 +247,7 @@ function CDMOptions.SelectAnchor(widget, parentWidget, anchorIndex, anchorTabsTb
 	xOffset:SetValue(data.anchor[4])
 	xOffset:SetCallback("OnValueChanged", function(self, event, value)
 		data.anchor[4] = value
-		ApplyModeConfigUpdate(anchorIndex, mode)
+		Options.ApplyModeConfigUpdate(anchorIndex, mode)
 	end)
 	anchorOptions:AddChild(xOffset)
 
@@ -267,7 +258,7 @@ function CDMOptions.SelectAnchor(widget, parentWidget, anchorIndex, anchorTabsTb
 	yOffset:SetValue(data.anchor[5])
 	yOffset:SetCallback("OnValueChanged", function(self, event, value)
 		data.anchor[5] = value
-		ApplyModeConfigUpdate(anchorIndex, mode)
+		Options.ApplyModeConfigUpdate(anchorIndex, mode)
 	end)
 	anchorOptions:AddChild(yOffset)
 
@@ -275,19 +266,21 @@ function CDMOptions.SelectAnchor(widget, parentWidget, anchorIndex, anchorTabsTb
 	advancedConfigTabs:SetLayout("flow")
 	advancedConfigTabs:SetFullWidth(true)
 	advancedConfigTabs:SetHeight(280)
-	advancedConfigTabs:SetTabs({ { value = "rowConfig", text = "Row Config" }, { value = "spellConfig", text = "Spell Config" } })
+	advancedConfigTabs:SetTabs({ { value = "spellConfig", text = "Spell Config" }, { value = "rowConfig", text = "Row Config" } })
 	advancedConfigTabs:SetCallback("OnGroupSelected", function(self, _, configType)
-		SelectAdvancedConfig(self, widget, parentWidget, scrollFrame, data, anchorIndex, configType, mode, options, isProfileConfig)
+		self:ReleaseChildren()
+
+		if configType == "rowConfig" then
+			CDMOptions.CreateRowConfig(self, anchorOptions, widget, parentWidget, scrollFrame, data, anchorIndex, mode, options, isProfileConfig)
+		elseif configType == "spellConfig" then
+			CDMOptions.CreateSpellConfig(self, anchorOptions, widget, parentWidget, scrollFrame, data, anchorIndex, mode, options, isProfileConfig)
+		end
+		anchorOptions:DoLayout()
 	end)
-	advancedConfigTabs:SelectTab(1)
+	advancedConfigTabs:SelectTab("spellConfig")
 	anchorOptions:AddChild(advancedConfigTabs)
 
 	scrollFrame:DoLayout()
 	--scrollFrame:FixScroll()
 	--scrollFrame:SetScroll(0)
-
-	RunNextFrame(function()
-		horizontalScrollFrame.scrollbar:ScrollToEnd()
-		horizontalScrollFrame.scrollbar:ScrollToBegin()
-	end)
 end

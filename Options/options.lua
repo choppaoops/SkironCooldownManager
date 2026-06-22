@@ -6,7 +6,8 @@ local LibCustomGlow = LibStub("LibCustomGlow-1.0")
 local LibWindow = LibStub("LibWindow-1.1")
 local Options = SCM.Options
 local Utils = SCM.Utils
-local NormalizeBuffBarGroup = Utils.NormalizeBuffBarGroup
+local ToGlobalGroup = Utils.ToGlobalGroup
+local ToBuffBarGroup = Utils.ToBuffBarGroup
 local GetCooldownConfigKey = Utils.GetCooldownConfigKey
 local UPDATE_SCOPE = SCM.CDM.UPDATE_SCOPE
 

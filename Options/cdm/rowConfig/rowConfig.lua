@@ -2,6 +2,7 @@ local SCM = select(2, ...)
 local Options = SCM.Options
 local CDMOptions = Options.CDM
 local Utils = SCM.Utils
+local AceGUI = LibStub("AceGUI-3.0")
 
 Options.RowConfig = {}
 
@@ -49,7 +50,7 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, an
 		hardLimit:SetValue(rowConfig.hardLimit)
 		hardLimit:SetCallback("OnValueChanged", function(_, _, value)
 			rowConfig.hardLimit = value
-			ApplyModeConfigUpdate(anchorIndex, mode)
+			Options.ApplyModeConfigUpdate(anchorIndex, mode)
 		end)
 		hardLimit:SetCallback("OnEnter", function()
 			GameTooltip:SetOwner(self.frame, "ANCHOR_CURSOR")
@@ -71,7 +72,7 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, an
 			useFixedWidth:SetDisabled(data.matchAnchorWidth)
 			useFixedWidth:SetCallback("OnValueChanged", function(_, _, value)
 				rowConfig.useFixedWidth = value
-				ApplyModeConfigUpdate(anchorIndex, mode)
+				Options.ApplyModeConfigUpdate(anchorIndex, mode)
 
 				if fixedWidth then
 					rowConfig.fixedWidth = rowConfig.fixedWidth or 200
@@ -97,7 +98,7 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, an
 			fixedWidth:SetDisabled(not rowConfig.useFixedWidth)
 			fixedWidth:SetCallback("OnValueChanged", function(_, _, value)
 				rowConfig.fixedWidth = value
-				ApplyModeConfigUpdate(anchorIndex, mode)
+				Options.ApplyModeConfigUpdate(anchorIndex, mode)
 			end)
 			self:AddChild(fixedWidth)
 		end
@@ -109,7 +110,7 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, an
 		chargeRelativePoint:SetValue(rowConfig.chargePoint or options.chargePoint)
 		chargeRelativePoint:SetCallback("OnValueChanged", function(_, _, value)
 			rowConfig.chargePoint = value
-			ApplyModeConfigUpdate(anchorIndex, mode)
+			Options.ApplyModeConfigUpdate(anchorIndex, mode)
 		end)
 		self:AddChild(chargeRelativePoint)
 
@@ -120,7 +121,7 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, an
 		chargeRelativePoint:SetValue(rowConfig.chargeRelativePoint or options.chargeRelativePoint)
 		chargeRelativePoint:SetCallback("OnValueChanged", function(_, _, value)
 			rowConfig.chargeRelativePoint = value
-			ApplyModeConfigUpdate(anchorIndex, mode)
+			Options.ApplyModeConfigUpdate(anchorIndex, mode)
 		end)
 		self:AddChild(chargeRelativePoint)
 
@@ -131,7 +132,7 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, an
 		xOffset:SetValue(rowConfig.chargeXOffset or options.chargeXOffset)
 		xOffset:SetCallback("OnValueChanged", function(self, event, value)
 			rowConfig.chargeXOffset = value
-			ApplyModeConfigUpdate(anchorIndex, mode)
+			Options.ApplyModeConfigUpdate(anchorIndex, mode)
 		end)
 		self:AddChild(xOffset)
 
@@ -142,7 +143,7 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, an
 		yOffset:SetValue(rowConfig.chargeYOffset or options.chargeYOffset)
 		yOffset:SetCallback("OnValueChanged", function(self, event, value)
 			rowConfig.chargeYOffset = value
-			ApplyModeConfigUpdate(anchorIndex, mode)
+			Options.ApplyModeConfigUpdate(anchorIndex, mode)
 		end)
 		self:AddChild(yOffset)
 
@@ -153,7 +154,7 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, an
 		chargeFontSize:SetValue(rowConfig.chargeFontSize or options.chargeFontSize)
 		chargeFontSize:SetCallback("OnValueChanged", function(self, event, value)
 			rowConfig.chargeFontSize = value
-			ApplyModeConfigUpdate(anchorIndex, mode)
+			Options.ApplyModeConfigUpdate(anchorIndex, mode)
 		end)
 		self:AddChild(chargeFontSize)
 
@@ -163,7 +164,7 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, an
 		truncateWhenZero:SetValue(rowConfig.chargeTruncateWhenZero)
 		truncateWhenZero:SetCallback("OnValueChanged", function(_, _, value)
 			rowConfig.chargeTruncateWhenZero = value
-			ApplyModeConfigUpdate(anchorIndex, mode)
+			Options.ApplyModeConfigUpdate(anchorIndex, mode)
 		end)
 		self:AddChild(truncateWhenZero)
 	elseif tabGroup == "applications" then
@@ -174,7 +175,7 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, an
 		applicationsPoint:SetValue(rowConfig.applicationsPoint or options.chargePoint)
 		applicationsPoint:SetCallback("OnValueChanged", function(_, _, value)
 			rowConfig.applicationsPoint = value
-			ApplyModeConfigUpdate(anchorIndex, mode)
+			Options.ApplyModeConfigUpdate(anchorIndex, mode)
 		end)
 		self:AddChild(applicationsPoint)
 
@@ -185,7 +186,7 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, an
 		applicationsRelativePoint:SetValue(rowConfig.applicationsRelativePoint or options.chargeRelativePoint)
 		applicationsRelativePoint:SetCallback("OnValueChanged", function(_, _, value)
 			rowConfig.applicationsRelativePoint = value
-			ApplyModeConfigUpdate(anchorIndex, mode)
+			Options.ApplyModeConfigUpdate(anchorIndex, mode)
 		end)
 		self:AddChild(applicationsRelativePoint)
 
@@ -196,7 +197,7 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, an
 		xOffset:SetValue(rowConfig.applicationsXOffset or options.chargeXOffset)
 		xOffset:SetCallback("OnValueChanged", function(self, event, value)
 			rowConfig.applicationsXOffset = value
-			ApplyModeConfigUpdate(anchorIndex, mode)
+			Options.ApplyModeConfigUpdate(anchorIndex, mode)
 		end)
 		self:AddChild(xOffset)
 
@@ -207,7 +208,7 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, an
 		yOffset:SetValue(rowConfig.applicationsYOffset or options.chargeYOffset)
 		yOffset:SetCallback("OnValueChanged", function(self, event, value)
 			rowConfig.applicationsYOffset = value
-			ApplyModeConfigUpdate(anchorIndex, mode)
+			Options.ApplyModeConfigUpdate(anchorIndex, mode)
 		end)
 		self:AddChild(yOffset)
 
@@ -218,7 +219,7 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, an
 		fontSize:SetValue(rowConfig.applicationsFontSize or options.chargeFontSize)
 		fontSize:SetCallback("OnValueChanged", function(self, event, value)
 			rowConfig.applicationsFontSize = value
-			ApplyModeConfigUpdate(anchorIndex, mode)
+			Options.ApplyModeConfigUpdate(anchorIndex, mode)
 		end)
 		self:AddChild(fontSize)
 	elseif tabGroup == "cooldowns" then
@@ -229,13 +230,13 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, an
 		fontSize:SetValue(rowConfig.cooldownFontSize or ((options.cooldownFontSize or 0.6) * (rowConfig.iconWidth or rowConfig.size)))
 		fontSize:SetCallback("OnValueChanged", function(self, event, value)
 			rowConfig.cooldownFontSize = value
-			ApplyModeConfigUpdate(anchorIndex, mode)
+			Options.ApplyModeConfigUpdate(anchorIndex, mode)
 		end)
 		self:AddChild(fontSize)
 	end
 end
 
-function Options.RowConfig.SelectRow(widget, rowWidget, parentWidget, scrollFrame, data, anchorIndex, rowIndex, rowTabsTbl, mode, options, isProfileConfig)
+function CDMOptions.SelectRow(widget, rowWidget, parentWidget, scrollFrame, data, anchorIndex, rowIndex, rowTabsTbl, mode, options, isProfileConfig)
 	widget:ReleaseChildren()
 
 	local isGlobal = mode == "global"
@@ -278,7 +279,7 @@ function Options.RowConfig.SelectRow(widget, rowWidget, parentWidget, scrollFram
 		end
 
 		rowConfig.iconHeight = value
-		ApplyModeConfigUpdate(anchorIndex, mode)
+		Options.ApplyModeConfigUpdate(anchorIndex, mode)
 	end)
 	iconWidth:SetCallback("OnValueChanged", function(self, event, value)
 		if rowConfig.keepAspectRatio then
@@ -295,7 +296,7 @@ function Options.RowConfig.SelectRow(widget, rowWidget, parentWidget, scrollFram
 		end
 		rowConfig.iconWidth = value
 
-		ApplyModeConfigUpdate(anchorIndex, mode)
+		Options.ApplyModeConfigUpdate(anchorIndex, mode)
 	end)
 	widget:AddChild(iconHeight)
 
@@ -306,7 +307,7 @@ function Options.RowConfig.SelectRow(widget, rowWidget, parentWidget, scrollFram
 	limit:SetValue(rowConfig.limit)
 	limit:SetCallback("OnValueChanged", function(self, event, value)
 		rowConfig.limit = value
-		ApplyModeConfigUpdate(anchorIndex, mode)
+		Options.ApplyModeConfigUpdate(anchorIndex, mode)
 	end)
 	widget:AddChild(limit)
 
@@ -349,7 +350,7 @@ function Options.RowConfig.SelectRow(widget, rowWidget, parentWidget, scrollFram
 		end)
 		widget:SetTabs(rowTabsTbl)
 		widget:SelectTab(nextIndex)
-		ApplyModeConfigUpdate(anchorIndex, mode)
+		Options.ApplyModeConfigUpdate(anchorIndex, mode)
 	end)
 	buttonGroup:AddChild(addRowButton)
 
@@ -380,12 +381,12 @@ function Options.RowConfig.SelectRow(widget, rowWidget, parentWidget, scrollFram
 
 		widget:SetTabs(rowTabsTbl)
 		widget:SelectTab(#rowTabsTbl)
-		ApplyModeConfigUpdate(anchorIndex, mode)
+		Options.ApplyModeConfigUpdate(anchorIndex, mode)
 	end)
 	buttonGroup:AddChild(deleteRowButton)
 end
 
-function CDMOptions.CreateRowConfig(self, widget, parentWidget, scrollFrame, data, anchorIndex, mode, options, isProfileConfig)
+function CDMOptions.CreateRowConfig(self, widget, anchorOptions, parentWidget, scrollFrame, data, anchorIndex, mode, options, isProfileConfig)
 	local rowTabsTbl = {}
 	for i, row in ipairs(data.rowConfig) do
 		tinsert(rowTabsTbl, { value = i, text = "Row " .. i })
@@ -398,7 +399,8 @@ function CDMOptions.CreateRowConfig(self, widget, parentWidget, scrollFrame, dat
 	rowTabs:SetHeight(280)
 	rowTabs:SetTabs(rowTabsTbl)
 	rowTabs:SetCallback("OnGroupSelected", function(self, event, rowIndex)
-		SelectRow(self, widget, parentWidget, scrollFrame, data, anchorIndex, rowIndex, rowTabsTbl, mode, options, isProfileConfig)
+		CDMOptions.SelectRow(self, widget, parentWidget, scrollFrame, data, anchorIndex, rowIndex, rowTabsTbl, mode, options, isProfileConfig)
+		anchorOptions:DoLayout()
 	end)
 	rowTabs:SelectTab(1)
 	self:AddChild(rowTabs)

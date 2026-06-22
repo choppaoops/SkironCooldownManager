@@ -56,7 +56,21 @@ Modules\castbar.lua
 
 api.lua
 
-Options\cdm.lua
+Options\cdm\cdm.lua
+Options\cdm\anchorConfig\iconBarTabs.lua
+Options\cdm\anchorConfig\anchorTabs.lua
+Options\cdm\anchorConfig\copyTabs.lua
+Options\cdm\rowConfig\rowConfig.lua
+Options\cdm\spellConfig\spellConfig.lua
+Options\cdm\spellConfig\spellConfigTabs.lua
+Options\cdm\spellConfig\scrollFrame.lua
+Options\cdm\spellConfig\dropdown.lua
+Options\cdm\spellConfig\tabs\general.lua
+Options\cdm\spellConfig\tabs\glow.lua
+Options\cdm\spellConfig\tabs\load.lua
+Options\cdm\spellConfig\tabs\filter.lua
+Options\cdm\spellConfig\tabs\items.lua
+## Options\cdm\spellConfig\tabs\states.lua
 Options\general.lua
 Options\castbar.lua
 Options\options.lua

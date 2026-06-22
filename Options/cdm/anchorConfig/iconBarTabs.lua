@@ -4,6 +4,7 @@ local CDMOptions = Options.CDM
 local Utils = SCM.Utils
 local ToGlobalGroup = Utils.ToGlobalGroup
 local ToBuffBarGroup = Utils.ToBuffBarGroup
+local AceGUI = LibStub("AceGUI-3.0")
 
 StaticPopupDialogs["SCM_RENAME_ANCHOR"] = {
 	text = "New Anchor Name",
@@ -263,7 +264,7 @@ function CDMOptions.CreateAnchorTabGroup(parent, frame, mode)
 
 	anchorTabs:SetTabs(anchorTabsTbl)
 	anchorTabs:SetCallback("OnGroupSelected", function(self, event, anchorIndex)
-		SelectAnchor(self, parent, anchorIndex, anchorTabsTbl, mode)
+		CDMOptions.SelectAnchor(self, parent, anchorIndex, anchorTabsTbl, mode)
 	end)
 	parent:AddChild(anchorTabs)
 	anchorTabs:SelectTab(1)

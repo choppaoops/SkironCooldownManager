@@ -1,8 +1,9 @@
 local SCM = select(2, ...)
 local Options = SCM.Options
 local CDMOptions = Options.CDM
+local AceGUI = LibStub("AceGUI-3.0")
 
-function CDMOptions.CreateFilterTabSettings(parentWidget, scrollFrame, buttonConfig)
+function CDMOptions.CreateFilterTabSettings(iconSettingsTabs, iconSettings, scrollFrame, buttonFrame, buttonData, buttonConfig, anchorIndex, mode, isGlobal, isBuffBar)
 	local function GetCustomItemDisplay(itemID)
 		local itemName = C_Item.GetItemNameByID(itemID)
 		local itemTexture = C_Item.GetItemIconByID(itemID)
