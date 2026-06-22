@@ -228,7 +228,7 @@ local function ProcessAndCreateButtons(parentButton, items, isBuffIcon, scrollFr
 
 			local activeColor = (type(data.category) == "number" and data.category < 0 and colorDisabled) or (info.isKnown and colorKnown) or colorUnknown
 			parentButton:CreateButton(string.format("|T%d:0|t |cff%s%s (%d)|r", C_Spell.GetSpellTexture(info.spellID), activeColor, C_Spell.GetSpellName(info.spellID), info.spellID), function(info)
-				if not SCM:IsSpellInData(info.cooldownID, info.category) and not DoesScrollFrameContainSpellConfig(scrollFrame, info.configID, info.cooldownID) then
+				if not CDMOptions.IsSpellInData(info.cooldownID, info.category) and not DoesScrollFrameContainSpellConfig(scrollFrame, info.configID, info.cooldownID) then
 					local dataIndex = scrollFrame:AddSpellBySpellID(info)
 					SCM:AddSpellToConfig(anchorIndex, dataIndex, info, data, item.targetCategory, isBuffIcon)
 					Options.ApplyModeConfigUpdate(anchorIndex, mode)
@@ -246,7 +246,7 @@ local function CreateIconButtons(rootDescription, scrollFrame, anchorIndex, mode
 	local button = rootDescription:CreateButton(buttonName)
 
 	local items = {}
-	for _, categoryID in ipairs(...) do
+	for _, categoryID in ipairs({...}) do
 		local cooldownIDs = C_CooldownViewer.GetCooldownViewerCategorySet(categoryID, true)
 		for _, cooldownID in ipairs(cooldownIDs) do
 			local info = C_CooldownViewer.GetCooldownViewerCooldownInfo(cooldownID)
@@ -257,7 +257,7 @@ local function CreateIconButtons(rootDescription, scrollFrame, anchorIndex, mode
 				local configID = GetCooldownConfigKey(cooldownID)
 				info.spellID = spellID
 
-				if configID and not SCM:IsSpellInData(cooldownID, data.category) and not DoesScrollFrameContainSpellConfig(scrollFrame, configID, cooldownID) then
+				if configID and not CDMOptions.IsSpellInData(cooldownID, data.category) and not DoesScrollFrameContainSpellConfig(scrollFrame, configID, cooldownID) then
 					table.insert(items, { info = info, data = data, cooldownID = cooldownID, targetCategory = targetCategory })
 				end
 			end
@@ -286,7 +286,7 @@ local function CreateBuffBarIconButtons(rootDescription, scrollFrame, anchorInde
 				local configID = GetCooldownConfigKey(cooldownID)
 				info.spellID = spellID
 
-				if configID and not SCM:IsSpellInData(cooldownID, data.category) and not DoesScrollFrameContainSpellConfig(scrollFrame, configID, cooldownID) then
+				if configID and not CDMOptions.IsSpellInData(cooldownID, data.category) and not DoesScrollFrameContainSpellConfig(scrollFrame, configID, cooldownID) then
 					table.insert(buffItems, { info = info, data = data, cooldownID = cooldownID, targetCategory = 3 })
 				end
 			end
@@ -302,7 +302,7 @@ local function CreateBuffBarIconButtons(rootDescription, scrollFrame, anchorInde
 				local configID = GetCooldownConfigKey(cooldownID)
 				info.spellID = spellID
 
-				if configID and not SCM:IsSpellInData(cooldownID, data.category) and not DoesScrollFrameContainSpellConfig(scrollFrame, configID, cooldownID) then
+				if configID and not CDMOptions.IsSpellInData(cooldownID, data.category) and not DoesScrollFrameContainSpellConfig(scrollFrame, configID, cooldownID) then
 					table.insert(buffItems, { info = info, data = data, cooldownID = cooldownID, targetCategory = 3 })
 				end
 			end
@@ -334,7 +334,7 @@ local function CreateCopyButtons(rootDescription, scrollFrame, anchorIndex, mode
 						local data = displayData.cooldownInfoByID[cooldownID]
 						local configID = data and data.category == sourceCategory and GetCooldownConfigKey(cooldownID)
 
-						if configID and not SCM:IsSpellInData(cooldownID, data.category) and not DoesScrollFrameContainSpellConfig(scrollFrame, configID, cooldownID) then
+						if configID and not CDMOptions.IsSpellInData(cooldownID, data.category) and not DoesScrollFrameContainSpellConfig(scrollFrame, configID, cooldownID) then
 							local info = C_CooldownViewer.GetCooldownViewerCooldownInfo(cooldownID)
 							if info then
 								info.spellID = GetSpellIDForCooldownInfo(info)

@@ -4,6 +4,8 @@ local CDMOptions = Options.CDM
 local AceGUI = LibStub("AceGUI-3.0")
 
 function CDMOptions.CreateGeneralTabSettings(iconSettingsTabs, iconSettings, scrollFrame, buttonFrame, buttonData, buttonConfig, anchorIndex, mode, isGlobal, isBuffBar)
+	local options = SCM.db.profile.options
+	
 	if buttonData.spellID and buttonData.spellID > 0 then
 		iconSettings:SetTitle(C_Spell.GetSpellName(buttonData.spellID))
 	elseif buttonData.itemID then

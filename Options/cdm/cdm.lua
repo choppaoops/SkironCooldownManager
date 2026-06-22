@@ -11,6 +11,13 @@ local Constants = SCM.Constants
 
 SCM.MainTabs.CDM = { value = "CDM", text = "Cooldown Manager", order = 2, subgroups = {} }
 
+function CDMOptions.IsSpellInData(cooldownID, source)
+	local configID = Utils.GetCooldownConfigKey(cooldownID)
+	local spellConfig = configID and SCM.spellConfig[configID]
+	local pairedSource = Utils.GetPairedSource(source)
+	return spellConfig and (spellConfig.source[source] or (pairedSource and spellConfig.source[pairedSource]))
+end
+
 function CDMOptions.ShowIconSettingsMessage(parentWidget, scrollFrame, message)
 	parentWidget:SetTitle("")
 
