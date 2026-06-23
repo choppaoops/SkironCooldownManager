@@ -843,7 +843,7 @@ local function UpdateSegmentValues(bar, segmentBars, segmentCount, currentValue,
 		end
 
 		segmentBar:SetStatusBarColor(segmentR, segmentG, segmentB)
-		segmentBar:SetValue(segmentProgress)
+		segmentBar:SetValue(segmentProgress,bar.barOptions.useSmoothPowerUpdates and 1 or 0)
 	end
 end
 
@@ -1405,7 +1405,7 @@ function SCMResourceBarControllerMixin:UpdateBarDisplay(bar, currentValue, maxVa
 	end
 
 	bar:SetMinMaxValues(0, maxValue)
-	bar:SetValue(currentValue)
+	bar:SetValue(currentValue, bar.barOptions.useSmoothPowerUpdates and Enum.StatusBarInterpolation.ExponentialEaseOut or Enum.StatusBarInterpolation.Immediate)
 
 	if not isFullUpdate and bar.SCMSegmentedDisplay and bar.SegmentFillBars then
 		local segmentCount = bar.SCMActiveSegmentCount
