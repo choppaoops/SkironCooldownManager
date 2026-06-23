@@ -34,7 +34,7 @@ local function OnBuffCooldownSet(self)
 		parent.SCMFixedDuration = parent.SCMFixedDuration or GetTime() + parent.SCMUseFixedDuration
 	end
 
-	if not parent.SCMHidden or parent.SCMConfig.alwaysShow then
+	if not parent.SCMHidden or (not SCM.isHideWhenInactiveEnabled and parent.SCMConfig.alwaysShow) then
 		Icons.UpdateChildDesaturation(parent, false)
 		Icons.UpdateChildGlow(parent, false)
 
@@ -72,7 +72,7 @@ local function OnBuffCooldownEnd(self)
 
 	Icons.UpdateChildGlow(parent, true)
 
-	if parent.SCMConfig.alwaysShow then
+	if (not SCM.isHideWhenInactiveEnabled and parent.SCMConfig.alwaysShow) then
 		Icons.UpdateChildDesaturation(parent, true)
 		return
 	end
@@ -207,6 +207,7 @@ function Cooldowns.SetNormalCooldown(self, parent)
 		end
 	end
 
+	local options = SCM.db.profile.options
 	if durationObject then
 		self:Clear()
 		parent.Icon.SCMDesaturated = desaturate
@@ -220,7 +221,7 @@ function Cooldowns.SetNormalCooldown(self, parent)
 			self:SetDrawSwipe(true)
 			self:SetCooldownFromDurationObject(durationObject)
 		end
-	else
+	elseif not self:GetUseAuraDisplayTime() or (options.disableRegularIconActiveSwipe and not parent.SCMConfig.forceActiveSwipe)  then
 		parent.Icon.SCMDesaturated = nil
 		parent.Icon:SetDesaturated(false)
 		self:Clear()

@@ -264,24 +264,9 @@ function SCM:TRAIT_CONFIG_UPDATED()
 	end)
 end
 
-local function ClearLayoutPoints()
-	if InCombatLockdown() then
-		return
-	end
-
-	for _, anchorFrame in pairs(SCM.anchorFrames) do
-		anchorFrame:ClearAllPoints()
-	end
-
-	SCM_ResourceBarContainer:ClearAllPoints()
-	SCM_SecondaryResourceBar:ClearAllPoints()
-	SCM_PrimaryResourceBar:ClearAllPoints()
-	SCM_CastBar:ClearAllPoints()
-end
-
 function SCM:ACTIVE_PLAYER_SPECIALIZATION_CHANGED()
 	SCM:ResetCooldownViewerRuntimeState()
-	ClearLayoutPoints()
+	SCM:ResetResourceBar()
 
 	C_Timer.After(0.5, function()
 		RefreshCooldownViewerData(true)
@@ -335,6 +320,8 @@ function SCM:ITEM_DATA_LOAD_RESULT(itemID, success)
 end
 
 local function OnProfileChanged(_, _, _, skipReset)
+	if SCM.importingProfile then return end
+
 	-- Hopefully players won't change profiles that much that we reach the frame limit :)
 	if not skipReset then
 		SCM.DB:ResetData()
