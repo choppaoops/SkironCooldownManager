@@ -57,6 +57,10 @@ function SCM:StartCustomGlow(child)
 			for _, texture in pairs(glowFrame.textures) do
 				texture:SetTexelSnappingBias(0)
 				texture:SetSnapToPixelGrid(false)
+
+				if glowTypeOptions.border then
+					texture:SetBlendMode("ADD")
+				end
 			end
 
 			for _, mask in pairs(glowFrame.masks) do

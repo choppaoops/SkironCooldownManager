@@ -1,6 +1,8 @@
 ### Version 1.5.34 [Alpha]
 
 Additions:
+- Add more presets (potions, racials, etc)
+- Add option for a "Smooth" resource bar
 
 Fixes:
 - Fix 12.1 lua errors
@@ -11,3 +13,4 @@ Fixes:
 - Fix lua errors when importing profiles
 - Make sure "always show" only works when "Disable "Hide While Inactive"" is enabled
 - Clean up resource bar code
+- Make sure the border is disabled when it should be
