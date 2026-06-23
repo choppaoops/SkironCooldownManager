@@ -31,9 +31,11 @@ Database\curves.lua
 Database\constants.lua
 Database\defaults.lua
 Database\sharedmedia.lua
-Database\loader.lua
+Database\config.lua
 
 core.lua
+events.lua
+hooks.lua
 
 Modules\glow.lua
 Modules\cache.lua

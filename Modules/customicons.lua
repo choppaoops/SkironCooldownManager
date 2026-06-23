@@ -170,6 +170,10 @@ local function OnCustomIconShow(self)
 		return
 	end
 
+	if self.SCMSkipShowValidation then
+		return
+	end
+
 	if self.SCMIconType == "empty" then
 		return
 	end
