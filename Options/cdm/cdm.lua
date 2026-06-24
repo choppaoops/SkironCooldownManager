@@ -6,8 +6,6 @@ local CDMOptions = Options.CDM
 
 local AceGUI = LibStub("AceGUI-3.0")
 local Utils = SCM.Utils
-local CustomIcons = SCM.CustomIcons
-local Constants = SCM.Constants
 
 SCM.MainTabs.CDM = { value = "CDM", text = "Cooldown Manager", order = 2, subgroups = {} }
 

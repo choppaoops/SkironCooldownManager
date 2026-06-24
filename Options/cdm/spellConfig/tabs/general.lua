@@ -5,14 +5,6 @@ local AceGUI = LibStub("AceGUI-3.0")
 
 function CDMOptions.CreateGeneralTabSettings(iconSettingsTabs, iconSettings, scrollFrame, buttonFrame, buttonData, buttonConfig, anchorIndex, mode, isGlobal, isBuffBar)
 	local options = SCM.db.profile.options
-	
-	if buttonData.spellID and buttonData.spellID > 0 then
-		iconSettings:SetTitle(C_Spell.GetSpellName(buttonData.spellID))
-	elseif buttonData.itemID then
-		iconSettings:SetTitle(C_Item.GetItemNameByID(buttonData.itemID))
-	elseif buttonData.slotID then
-		iconSettings:SetTitle("Slot ID " .. buttonData.slotID)
-	end
 
 	if not isBuffBar then
 		local desaturate, alwaysShow, showWhileInactive
@@ -92,6 +84,16 @@ function CDMOptions.CreateGeneralTabSettings(iconSettingsTabs, iconSettings, scr
 				CDMOptions.ApplyIconConfigUpdate(buttonFrame, buttonData, anchorIndex, mode, isGlobal, isBuffBar)
 			end)
 			iconSettingsTabs:AddChild(hideWhileReady)
+
+			local expCooldownThing = AceGUI:Create("CheckBox")
+			expCooldownThing:SetLabel("Experimental Cooldown Anchoring")
+			expCooldownThing:SetRelativeWidth(0.5)
+			expCooldownThing:SetValue(buttonConfig.expCooldownThing)
+			expCooldownThing:SetCallback("OnValueChanged", function(self, event, value)
+				buttonConfig.expCooldownThing = value or nil
+				CDMOptions.ApplyIconConfigUpdate(buttonFrame, buttonData, anchorIndex, mode, isGlobal, isBuffBar)
+			end)
+			iconSettingsTabs:AddChild(expCooldownThing)
 
 			if buttonData.isCustom then
 				local showGCD = AceGUI:Create("CheckBox")

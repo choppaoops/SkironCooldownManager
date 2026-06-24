@@ -64,7 +64,7 @@ local function AddCustomIcons(spells, customConfig, anchorIndex)
 			local iconType = config.iconType or (config.spellID and "spell") or "item"
 			local texture
 
-			if iconType == "spell" or iconType == "timer" then
+			if iconType == "spell" or iconType == "timer" or iconType == "bloodlust" then
 				texture = config.spellID and C_Spell.GetSpellTexture(config.spellID)
 			elseif iconType == "slot" then
 				texture = config.slotID and GetInventoryItemTexture("player", config.slotID) or 134400

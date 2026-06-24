@@ -244,6 +244,8 @@ end
 function CDMOptions.CreateAnchorTabGroup(parent, frame, mode)
 	parent:ReleaseChildren()
 
+	local options = SCM.db.profile.options
+
 	local isGlobal = mode == "global"
 	local isBuffBar = mode == "buffbars"
 
@@ -259,7 +261,12 @@ function CDMOptions.CreateAnchorTabGroup(parent, frame, mode)
 	local sourceConfig = (isGlobal and SCM.globalAnchorConfig) or (isBuffBar and SCM.buffBarsAnchorConfig) or SCM.anchorConfig
 	local anchorTabsTbl = {}
 	for i, anchorConfig in ipairs(sourceConfig) do
-		tinsert(anchorTabsTbl, { value = i, text = anchorConfig.anchorName or ("Anchor " .. i) })
+		if not isGlobal and anchorConfig.useGlobalProfileConfig then
+			local profileAnchorConfig = CDMOptions.GetProfileAnchorConfig(options, anchorConfig, i, isBuffBar)
+			tinsert(anchorTabsTbl, { value = i, text = profileAnchorConfig.anchorName or ("Anchor " .. i) })
+		else
+			tinsert(anchorTabsTbl, { value = i, text = anchorConfig.anchorName or ("Anchor " .. i) })
+		end
 	end
 
 	anchorTabs:SetTabs(anchorTabsTbl)

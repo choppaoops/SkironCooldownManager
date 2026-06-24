@@ -3,6 +3,29 @@ local Options = SCM.Options
 local CDMOptions = Options.CDM
 local AceGUI = LibStub("AceGUI-3.0")
 
+function CDMOptions.GetProfileAnchorConfig(options, data, anchorIndex, isBuffBar)
+	local config
+	if isBuffBar then
+		options.buffBarsAnchorConfig = options.buffBarsAnchorConfig or {}
+		config = options.buffBarsAnchorConfig[anchorIndex]
+	else
+		options.anchorConfig = options.anchorConfig or {}
+		config = options.anchorConfig[anchorIndex]
+	end
+
+	if not config then
+		config = CopyTable(data)
+	end
+
+	if isBuffBar then
+		options.buffBarsAnchorConfig[anchorIndex] = config
+	else
+		options.anchorConfig[anchorIndex] = config
+	end
+
+	return config
+end
+
 function CDMOptions.SelectAnchor(widget, parentWidget, anchorIndex, anchorTabsTbl, mode)
 	widget:ReleaseChildren()
 
@@ -29,31 +52,9 @@ function CDMOptions.SelectAnchor(widget, parentWidget, anchorIndex, anchorTabsTb
 	end
 
 	local data = sourceData
-	local function GetProfileAnchorConfig()
-		local config
-		if isBuffBar then
-			options.buffBarsAnchorConfig = options.buffBarsAnchorConfig or {}
-			config = options.buffBarsAnchorConfig[anchorIndex]
-		else
-			options.anchorConfig = options.anchorConfig or {}
-			config = options.anchorConfig[anchorIndex]
-		end
-
-		if not config then
-			config = CopyTable(data)
-		end
-
-		if isBuffBar then
-			options.buffBarsAnchorConfig[anchorIndex] = config
-		else
-			options.anchorConfig[anchorIndex] = config
-		end
-
-		return config
-	end
 
 	if not isGlobal and sourceData.useGlobalProfileConfig then
-		data = GetProfileAnchorConfig()
+		data = CDMOptions.GetProfileAnchorConfig(options, data, anchorIndex, isBuffBar)
 		isProfileConfig = true
 	end
 
@@ -133,7 +134,7 @@ function CDMOptions.SelectAnchor(widget, parentWidget, anchorIndex, anchorTabsTb
 		useGlobalProfileConfig:SetCallback("OnValueChanged", function(_, _, value)
 			sourceData.useGlobalProfileConfig = value
 			if value then
-				GetProfileAnchorConfig()
+				CDMOptions.GetProfileAnchorConfig(options, data, anchorIndex, isBuffBar)
 			end
 			Options.ApplyModeConfigUpdate(anchorIndex, mode)
 

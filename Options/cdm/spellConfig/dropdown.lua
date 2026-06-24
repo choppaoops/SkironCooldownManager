@@ -44,6 +44,214 @@ local customButtonConfigs = {
 	},
 }
 
+local presetButtonConfigs = {
+	["TIMERS"] = {
+		{
+			text = "|T136012:16:16|t Bloodlust",
+			configID = 2825,
+			iconType = "bloodlust",
+			config = {
+				duration = 40,
+			},
+		},
+		{
+			text = "|T7548911:16:16|t Light's Potential",
+			configID = 1236616,
+			iconType = "timer",
+			config = {
+				duration = 30,
+			},
+		},
+		{
+			text = "|T7548916:16:16|t Potion of Recklessness",
+			configID = 1236994,
+			iconType = "timer",
+			config = {
+				duration = 30,
+			},
+		},
+		{
+			text = "|T133876:16:16|t Algeth'ar Puzzle Box",
+			configID = 383781,
+			iconType = "timer",
+			config = {
+				duration = 20,
+			},
+		},
+		{
+			text = "|T7636709:16:16|t Light Company Guidon",
+			configID = 1259633,
+			iconType = "timer",
+			config = {
+				duration = 15,
+			},
+		},
+		{
+			text = "|T7636706:16:16|t Vaelgor's Final Stare",
+			configID = 1260459,
+			iconType = "timer",
+			config = {
+				duration = 15,
+			},
+		},
+		{
+			text = "|T2103819:16:16|t Emberwing Feather",
+			configID = 1250508,
+			iconType = "timer",
+			config = {
+				duration = 10,
+			},
+		},
+	},
+	["ITEMS"] = {
+		{
+			text = "|T7548909:16:16|t Silvermoon Health Potion",
+			configID = 241304,
+			iconType = "item",
+			config = {
+				customItems = {
+					[1] = 241305,
+				},
+			},
+		},
+		{
+			text = "|T538745:16:16|t Healthstone",
+			configID = 5512,
+			iconType = "item",
+			config = {
+				customItems = {
+					[1] = 224464,
+				},
+			},
+		},
+		{
+			text = "|T7548911:16:16|t Light's Potential",
+			configID = 245898,
+			iconType = "item",
+			config = {
+				customItems = {
+					[1] = 245897,
+					[2] = 241308,
+					[3] = 241309,
+				},
+			},
+		},
+		{
+			text = "|T7548916:16:16|t Potion of Recklessness",
+			configID = 245902,
+			iconType = "item",
+			config = {
+				customItems = {
+					[1] = 245903,
+					[2] = 241288,
+					[3] = 241289,
+				},
+			},
+		},
+	},
+	["RACIALS"] = {
+		{
+			text = "|T136225:16:16|t Stoneform",
+			configID = 20594,
+			iconType = "spell",
+			config = {
+				useLoadRace = true,
+				loadRaces = { [3] = true },
+			},
+		},
+		{
+			text = "|T132089:16:16|t Shadowmeld",
+			configID = 58984,
+			iconType = "spell",
+			config = {
+				useLoadRace = true,
+				loadRaces = { [4] = true },
+			},
+		},
+		{
+			text = "|T135726:16:16|t Blood Fury",
+			configID = 20572,
+			iconType = "spell",
+			config = {
+				useLoadRace = true,
+				loadRaces = { [2] = true },
+			},
+		},
+		{
+			text = "|T135727:16:16|t Berserking",
+			configID = 26297,
+			iconType = "spell",
+			config = {
+				useLoadRace = true,
+				loadRaces = { [8] = true },
+			},
+		},
+		{
+			text = "|T2021574:16:16|t Ancestral Call",
+			configID = 274738,
+			iconType = "spell",
+			config = {
+				useLoadRace = true,
+				loadRaces = { [36] = true },
+			},
+		},
+		{
+			text = "|T1724004:16:16|t Spatial Rift",
+			configID = 256948,
+			iconType = "spell",
+			config = {
+				useLoadRace = true,
+				loadRaces = { [29] = true },
+			},
+		},
+		{
+			text = "|T1786406:16:16|t Fireblood",
+			configID = 265221,
+			iconType = "spell",
+			config = {
+				useLoadRace = true,
+				loadRaces = { [34] = true },
+			},
+		},
+		{
+			text = "|T132368:16:16|t War Stomp",
+			configID = 20549,
+			iconType = "spell",
+			config = {
+				useLoadRace = true,
+				loadRaces = { [6] = true },
+			},
+		},
+		{
+			text = "|T4622488:16:16|t Wing Buffet",
+			configID = 357214,
+			iconType = "spell",
+			config = {
+				useLoadRace = true,
+				loadRaces = { [52] = true, [70] = true },
+			},
+		},
+		{
+			text = "|T1723987:16:16|t Bull Rush",
+			configID = 255654,
+			iconType = "spell",
+			config = {
+				useLoadRace = true,
+				loadRaces = { [28] = true },
+			},
+		},
+		{
+			text = "|T132309:16:16|t Escape Artist",
+			configID = 20589,
+			iconType = "spell",
+			config = {
+				useLoadRace = true,
+				loadRaces = { [7] = true },
+			},
+		},
+	},
+}
+
 local function GetSpellIDForCooldownInfo(cooldownInfo)
 	if cooldownInfo then
 		return cooldownInfo.linkedSpellID or cooldownInfo.overrideTooltipSpellID or cooldownInfo.overrideSpellID or cooldownInfo.spellID
@@ -78,7 +286,7 @@ local function ShowNumericInputPopup(key, title, callback)
 end
 
 local function BuildIconData(configID, iconType)
-	if iconType == "spell" or iconType == "timer" then
+	if iconType == "spell" or iconType == "timer" or iconType == "bloodlust" then
 		local texture = C_Spell.GetSpellTexture(configID)
 		if not texture then
 			return
@@ -173,11 +381,20 @@ local function CreateCustomIconButton(rootDescription, scrollFrame, anchorIndex,
 
 			insertedData.id = uniqueID
 
+			if buttonConfig.config then
+				local customConfig = SCM:GetConfigTableByID(uniqueID, buttonConfig.iconType, isGlobal)
+				for key, value in pairs(buttonConfig.config) do
+					customConfig[key] = value
+				end
+			end
+
 			SCM:ApplyAnchorGroupCDManagerConfig(anchorIndex, isGlobal)
 		end
 
 		if buttonConfig.popupKey then
 			ShowNumericInputPopup(buttonConfig.popupKey, buttonConfig.popupTitle, AddCustomIcon)
+		elseif buttonConfig.configID then
+			AddCustomIcon(buttonConfig.configID)
 		elseif buttonConfig.iconType == "empty" then
 			AddCustomIcon("")
 		end
@@ -188,8 +405,8 @@ local function CreateCustomIconButton(rootDescription, scrollFrame, anchorIndex,
 	end
 end
 
-local function CreateCustomIconButtons(rootDescription, scrollFrame, anchorIndex, isGlobal, buttonConfigs)
-	local customButton = rootDescription:CreateButton("Custom")
+local function CreateCustomIconButtons(rootDescription, scrollFrame, anchorIndex, isGlobal, buttonConfigs, text)
+	local customButton = rootDescription:CreateButton(text)
 
 	for _, buttonConfig in ipairs(buttonConfigs) do
 		CreateCustomIconButton(customButton, scrollFrame, anchorIndex, isGlobal, buttonConfig)
@@ -246,7 +463,7 @@ local function CreateIconButtons(rootDescription, scrollFrame, anchorIndex, mode
 	local button = rootDescription:CreateButton(buttonName)
 
 	local items = {}
-	for _, categoryID in ipairs({...}) do
+	for _, categoryID in ipairs({ ... }) do
 		local cooldownIDs = C_CooldownViewer.GetCooldownViewerCategorySet(categoryID, true)
 		for _, cooldownID in ipairs(cooldownIDs) do
 			local info = C_CooldownViewer.GetCooldownViewerCooldownInfo(cooldownID)
@@ -366,7 +583,11 @@ function CDMOptions.CreateAddSpellDropdown(owner, rootDescription, scrollFrame, 
 	rootDescription:CreateTitle("Add Icon")
 
 	if mode == "global" then
-		CreateCustomIconButtons(rootDescription, scrollFrame, anchorIndex, true, customButtonConfigs)
+		CreateCustomIconButtons(rootDescription, scrollFrame, anchorIndex, true, customButtonConfigs, "Custom")
+		CreateCustomIconButtons(rootDescription, scrollFrame, anchorIndex, true, presetButtonConfigs, "Presets")
+		CreateCustomIconButtons(rootDescription, scrollFrame, anchorIndex, true, presetButtonConfigs["TIMERS"], "|T237538:16:16|t Timers")
+		CreateCustomIconButtons(rootDescription, scrollFrame, anchorIndex, true, presetButtonConfigs["ITEMS"], "|T134856:16:16|t Items")
+		CreateCustomIconButtons(rootDescription, scrollFrame, anchorIndex, true, presetButtonConfigs["RACIALS"], "|T135727:16:16|t Racials")
 		return
 	end
 
@@ -383,7 +604,10 @@ function CDMOptions.CreateAddSpellDropdown(owner, rootDescription, scrollFrame, 
 
 	rootDescription:CreateDivider()
 
-	CreateCustomIconButtons(rootDescription, scrollFrame, anchorIndex, false, customButtonConfigs)
+	CreateCustomIconButtons(rootDescription, scrollFrame, anchorIndex, false, customButtonConfigs, "Custom")
+	CreateCustomIconButtons(rootDescription, scrollFrame, anchorIndex, false, presetButtonConfigs, "Presets")
+	CreateCustomIconButtons(rootDescription, scrollFrame, anchorIndex, false, presetButtonConfigs["TIMERS"], "|T237538:16:16|t Timers")
+	CreateCustomIconButtons(rootDescription, scrollFrame, anchorIndex, false, presetButtonConfigs["ITEMS"], "|T134856:16:16|t Items")
 	CreateCopyButtons(rootDescription, scrollFrame, anchorIndex, mode)
 	CreateExternalCustomEntries(rootDescription, scrollFrame, anchorIndex)
 end

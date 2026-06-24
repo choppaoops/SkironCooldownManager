@@ -104,7 +104,7 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, an
 		end
 	elseif tabGroup == "charges" then
 		local chargeRelativePoint = AceGUI:Create("Dropdown")
-		chargeRelativePoint:SetRelativeWidth(0.5)
+		chargeRelativePoint:SetRelativeWidth(0.25)
 		chargeRelativePoint:SetLabel("Point")
 		chargeRelativePoint:SetList(SCM.Constants.AnchorPoints)
 		chargeRelativePoint:SetValue(rowConfig.chargePoint or options.chargePoint)
@@ -115,7 +115,7 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, an
 		self:AddChild(chargeRelativePoint)
 
 		local chargeRelativePoint = AceGUI:Create("Dropdown")
-		chargeRelativePoint:SetRelativeWidth(0.5)
+		chargeRelativePoint:SetRelativeWidth(0.25)
 		chargeRelativePoint:SetLabel("Relative Point")
 		chargeRelativePoint:SetList(SCM.Constants.AnchorPoints)
 		chargeRelativePoint:SetValue(rowConfig.chargeRelativePoint or options.chargeRelativePoint)
@@ -148,7 +148,7 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, an
 		self:AddChild(yOffset)
 
 		local chargeFontSize = AceGUI:Create("Slider")
-		chargeFontSize:SetRelativeWidth(0.25)
+		chargeFontSize:SetRelativeWidth(0.33)
 		chargeFontSize:SetLabel("Font Size")
 		chargeFontSize:SetSliderValues(1, 50, 1)
 		chargeFontSize:SetValue(rowConfig.chargeFontSize or options.chargeFontSize)
@@ -160,13 +160,23 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, an
 
 		local truncateWhenZero = AceGUI:Create("CheckBox")
 		truncateWhenZero:SetLabel("Truncate When Zero")
-		truncateWhenZero:SetRelativeWidth(0.25)
+		truncateWhenZero:SetRelativeWidth(0.33)
 		truncateWhenZero:SetValue(rowConfig.chargeTruncateWhenZero)
 		truncateWhenZero:SetCallback("OnValueChanged", function(_, _, value)
 			rowConfig.chargeTruncateWhenZero = value
 			Options.ApplyModeConfigUpdate(anchorIndex, mode)
 		end)
 		self:AddChild(truncateWhenZero)
+
+		local chargeColour = AceGUI:Create("ColorPicker")
+		chargeColour:SetLabel("Colour")
+		chargeColour:SetRelativeWidth(0.33)
+		chargeColour:SetColor(rowConfig.chargeColour.r, rowConfig.chargeColour.g, rowConfig.chargeColour.b, rowConfig.chargeColour.a or 1)
+		chargeColour:SetCallback("OnValueChanged", function(_, _, r, g, b, a)
+			rowConfig.chargeColour = { r = r, g = g, b = b, a = a }
+			Options.ApplyModeConfigUpdate(anchorIndex, mode)
+		end)
+		self:AddChild(chargeColour)
 	elseif tabGroup == "applications" then
 		local applicationsPoint = AceGUI:Create("Dropdown")
 		applicationsPoint:SetRelativeWidth(0.5)
@@ -250,6 +260,67 @@ function CDMOptions.SelectRow(widget, rowWidget, parentWidget, scrollFrame, data
 	local rowConfig = data.rowConfig[rowIndex]
 	local widthLabel = isBuffBar and "Bar Width" or "Icon Width"
 	local heightLabel = isBuffBar and "Bar Height" or "Icon Height"
+
+	local buttonGroup = AceGUI:Create("SimpleGroup")
+	buttonGroup:SetFullWidth(true)
+	buttonGroup:SetLayout("flow")
+	widget:AddChild(buttonGroup)
+
+	local addRowButton = AceGUI:Create("Button")
+	addRowButton:SetText("Add Row")
+	addRowButton:SetRelativeWidth(0.5)
+	addRowButton:SetDisabled(#rowTabsTbl >= 9)
+	addRowButton:SetCallback("OnClick", function()
+		local nextIndex = (useDataRowConfig and (#data.rowConfig + 1)) or SCM:AddRow(anchorIndex)
+		if isGlobal then
+			data.rowConfig[nextIndex] = { iconHeight = 40, iconWidth = 40, limit = 8 }
+		elseif isBuffBar then
+			data.rowConfig[nextIndex] = { iconHeight = 40, iconWidth = 150, limit = 8 }
+		elseif isProfileConfig then
+			data.rowConfig[nextIndex] = { iconHeight = 40, iconWidth = 40, limit = 8 }
+		end
+
+		tinsert(rowTabsTbl, { value = nextIndex, text = "Row " .. nextIndex })
+		table.sort(rowTabsTbl, function(a, b)
+			return a.value < b.value
+		end)
+		widget:SetTabs(rowTabsTbl)
+		widget:SelectTab(nextIndex)
+		Options.ApplyModeConfigUpdate(anchorIndex, mode)
+	end)
+	buttonGroup:AddChild(addRowButton)
+
+	local deleteRowButton = AceGUI:Create("Button")
+	deleteRowButton:SetText("Delete Row")
+	deleteRowButton:SetRelativeWidth(0.5)
+	deleteRowButton:SetDisabled(rowIndex == 1)
+	deleteRowButton:SetCallback("OnClick", function()
+		if useDataRowConfig then
+			tremove(data.rowConfig, rowIndex)
+		else
+			SCM:RemoveRow(anchorIndex, rowIndex)
+		end
+
+		local removedIndex
+		for i, tab in ipairs(rowTabsTbl) do
+			if tab.value == rowIndex then
+				removedIndex = i
+				tremove(rowTabsTbl, i)
+				break
+			end
+		end
+
+		for i = removedIndex, #rowTabsTbl do
+			rowTabsTbl[i].value = i
+			rowTabsTbl[i].text = "Row " .. i
+		end
+
+		widget:SetTabs(rowTabsTbl)
+		widget:SelectTab(#rowTabsTbl)
+		Options.ApplyModeConfigUpdate(anchorIndex, mode)
+	end)
+	buttonGroup:AddChild(deleteRowButton)
+
 	local iconWidth = AceGUI:Create("Slider")
 	iconWidth:SetRelativeWidth(0.33)
 	iconWidth:SetSliderValues(10, isBuffBar and 500 or 200, 0.1)
@@ -324,66 +395,6 @@ function CDMOptions.SelectRow(widget, rowWidget, parentWidget, scrollFrame, data
 	end)
 	advancedRowSettings:SelectTab("general")
 	widget:AddChild(advancedRowSettings)
-
-	local buttonGroup = AceGUI:Create("SimpleGroup")
-	buttonGroup:SetFullWidth(true)
-	buttonGroup:SetLayout("flow")
-	widget:AddChild(buttonGroup)
-
-	local addRowButton = AceGUI:Create("Button")
-	addRowButton:SetText("Add Row")
-	addRowButton:SetRelativeWidth(0.5)
-	addRowButton:SetDisabled(#rowTabsTbl >= 9)
-	addRowButton:SetCallback("OnClick", function()
-		local nextIndex = (useDataRowConfig and (#data.rowConfig + 1)) or SCM:AddRow(anchorIndex)
-		if isGlobal then
-			data.rowConfig[nextIndex] = { iconHeight = 40, iconWidth = 40, limit = 8 }
-		elseif isBuffBar then
-			data.rowConfig[nextIndex] = { iconHeight = 40, iconWidth = 150, limit = 8 }
-		elseif isProfileConfig then
-			data.rowConfig[nextIndex] = { iconHeight = 40, iconWidth = 40, limit = 8 }
-		end
-
-		tinsert(rowTabsTbl, { value = nextIndex, text = "Row " .. nextIndex })
-		table.sort(rowTabsTbl, function(a, b)
-			return a.value < b.value
-		end)
-		widget:SetTabs(rowTabsTbl)
-		widget:SelectTab(nextIndex)
-		Options.ApplyModeConfigUpdate(anchorIndex, mode)
-	end)
-	buttonGroup:AddChild(addRowButton)
-
-	local deleteRowButton = AceGUI:Create("Button")
-	deleteRowButton:SetText("Delete Row")
-	deleteRowButton:SetRelativeWidth(0.5)
-	deleteRowButton:SetDisabled(rowIndex == 1)
-	deleteRowButton:SetCallback("OnClick", function()
-		if useDataRowConfig then
-			tremove(data.rowConfig, rowIndex)
-		else
-			SCM:RemoveRow(anchorIndex, rowIndex)
-		end
-
-		local removedIndex
-		for i, tab in ipairs(rowTabsTbl) do
-			if tab.value == rowIndex then
-				removedIndex = i
-				tremove(rowTabsTbl, i)
-				break
-			end
-		end
-
-		for i = removedIndex, #rowTabsTbl do
-			rowTabsTbl[i].value = i
-			rowTabsTbl[i].text = "Row " .. i
-		end
-
-		widget:SetTabs(rowTabsTbl)
-		widget:SelectTab(#rowTabsTbl)
-		Options.ApplyModeConfigUpdate(anchorIndex, mode)
-	end)
-	buttonGroup:AddChild(deleteRowButton)
 end
 
 function CDMOptions.CreateRowConfig(self, widget, anchorOptions, parentWidget, scrollFrame, data, anchorIndex, mode, options, isProfileConfig)
