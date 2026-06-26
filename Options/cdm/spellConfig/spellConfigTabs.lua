@@ -38,21 +38,25 @@ function CDMOptions.CreateSpellConfigTabs(parentScrollFrame, iconSettings, butto
 
 	buttonFrame:SetBackdropBorderColor(0, 1, 0, 1)
 
-	if buttonData.iconType == "bloodlust" then
-		iconSettings:SetTitle("Bloodlust")
-	elseif buttonData.spellID and buttonData.spellID > 0 then
-		iconSettings:SetTitle(C_Spell.GetSpellName(buttonData.spellID))
-	elseif buttonData.itemID then
-		iconSettings:SetTitle(C_Item.GetItemNameByID(buttonData.itemID))
-	elseif buttonData.slotID then
-		iconSettings:SetTitle("Slot ID " .. buttonData.slotID)
-	end
+	-- if buttonData.iconType == "bloodlust" then
+	-- 	iconSettings:SetTitle("Bloodlust")
+	-- elseif buttonData.spellID and buttonData.spellID > 0 then
+	-- 	iconSettings:SetTitle(C_Spell.GetSpellName(buttonData.spellID))
+	-- elseif buttonData.itemID then
+	-- 	iconSettings:SetTitle(C_Item.GetItemNameByID(buttonData.itemID))
+	-- elseif buttonData.slotID then
+	-- 	iconSettings:SetTitle("Slot ID " .. buttonData.slotID)
+	-- end
 
 	if iconConfig then
-		local iconSettingsTabs = AceGUI:Create("TabGroup")
+		local maxHeight
+
+		local iconSettingsTabs = AceGUI:Create("TreeGroup")
 		iconSettingsTabs:SetLayout("flow")
 		iconSettingsTabs:SetFullWidth(true)
-		iconSettingsTabs:SetTabs(isBuffBar and { { value = "general", text = "General" } } or iconTypeTabs[buttonData.iconType])
+		iconSettingsTabs:SetHeight(410)
+		iconSettingsTabs:SetAutoAdjustHeight(false)
+		iconSettingsTabs:SetTree(isBuffBar and { { value = "general", text = "General" } } or iconTypeTabs[buttonData.iconType])
 		iconSettingsTabs:SetCallback("OnGroupSelected", function(self, _, group)
 			self:ReleaseChildren()
 
@@ -75,9 +79,9 @@ function CDMOptions.CreateSpellConfigTabs(parentScrollFrame, iconSettings, butto
 		end)
 
 		if buttonData.iconType == "bloodlust" then
-			iconSettingsTabs:SelectTab("glow")
+			iconSettingsTabs:SelectByValue("glow")
 		else
-			iconSettingsTabs:SelectTab("general")
+			iconSettingsTabs:SelectByValue("general")
 		end
 		iconSettings:AddChild(iconSettingsTabs)
 

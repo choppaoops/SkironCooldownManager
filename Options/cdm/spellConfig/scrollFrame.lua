@@ -138,11 +138,11 @@ function CDMOptions.CreateSpellConfigScrollFrame(anchorIndex, mode, spellConfigT
 
 	scrollFrame:AddAddButton()
 
-	local iconSettings = AceGUI:Create("InlineGroup")
+	local iconSettings = AceGUI:Create("SimpleGroup")
 	iconSettings:SetLayout("flow")
 	iconSettings:SetFullWidth(true)
-	iconSettings:SetHeight(120)
-	iconSettings:SetTitle("")
+	iconSettings:SetFullHeight(true)
+	--iconSettings:SetTitle("")
 
 	local lastButtonFrame
 	scrollFrame:SetCallback("OnGroupSelected", function(_, _, buttonFrame, button)

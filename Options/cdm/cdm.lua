@@ -78,7 +78,7 @@ function CDMOptions.IsSpellInData(cooldownID, source)
 end
 
 function CDMOptions.ShowIconSettingsMessage(parentWidget, scrollFrame, message)
-	parentWidget:SetTitle("")
+	--parentWidget:SetTitle("")
 
 	local label = AceGUI:Create("Label")
 	label:SetRelativeWidth(1.0)

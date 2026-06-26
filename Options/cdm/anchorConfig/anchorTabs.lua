@@ -71,7 +71,7 @@ function CDMOptions.SelectAnchor(widget, parentWidget, anchorIndex, anchorTabsTb
 	local anchorOptions = AceGUI:Create("InlineGroup")
 	anchorOptions:SetLayout("flow")
 	anchorOptions:SetFullWidth(true)
-	anchorOptions:SetHeight(250)
+	anchorOptions:SetFullHeight(true)
 	anchorOptions:SetTitle("Anchor Options")
 	scrollFrame:AddChild(anchorOptions)
 
