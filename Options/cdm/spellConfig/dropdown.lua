@@ -411,6 +411,8 @@ local function CreateCustomIconButtons(rootDescription, scrollFrame, anchorIndex
 	for _, buttonConfig in ipairs(buttonConfigs) do
 		CreateCustomIconButton(customButton, scrollFrame, anchorIndex, isGlobal, buttonConfig)
 	end
+
+	return customButton
 end
 
 local function SortSpells(a, b)
@@ -584,10 +586,11 @@ function CDMOptions.CreateAddSpellDropdown(owner, rootDescription, scrollFrame, 
 
 	if mode == "global" then
 		CreateCustomIconButtons(rootDescription, scrollFrame, anchorIndex, true, customButtonConfigs, "Custom")
-		CreateCustomIconButtons(rootDescription, scrollFrame, anchorIndex, true, presetButtonConfigs, "Presets")
-		CreateCustomIconButtons(rootDescription, scrollFrame, anchorIndex, true, presetButtonConfigs["TIMERS"], "|T237538:16:16|t Timers")
-		CreateCustomIconButtons(rootDescription, scrollFrame, anchorIndex, true, presetButtonConfigs["ITEMS"], "|T134856:16:16|t Items")
-		CreateCustomIconButtons(rootDescription, scrollFrame, anchorIndex, true, presetButtonConfigs["RACIALS"], "|T135727:16:16|t Racials")
+
+		local presetButton = CreateCustomIconButtons(rootDescription, scrollFrame, anchorIndex, true, presetButtonConfigs, "Presets")
+		CreateCustomIconButtons(presetButton, scrollFrame, anchorIndex, true, presetButtonConfigs["TIMERS"], "|T237538:16:16|t Timers")
+		CreateCustomIconButtons(presetButton, scrollFrame, anchorIndex, true, presetButtonConfigs["ITEMS"], "|T134856:16:16|t Items")
+		CreateCustomIconButtons(presetButton, scrollFrame, anchorIndex, true, presetButtonConfigs["RACIALS"], "|T135727:16:16|t Racials")
 		return
 	end
 
@@ -605,9 +608,11 @@ function CDMOptions.CreateAddSpellDropdown(owner, rootDescription, scrollFrame, 
 	rootDescription:CreateDivider()
 
 	CreateCustomIconButtons(rootDescription, scrollFrame, anchorIndex, false, customButtonConfigs, "Custom")
-	CreateCustomIconButtons(rootDescription, scrollFrame, anchorIndex, false, presetButtonConfigs, "Presets")
-	CreateCustomIconButtons(rootDescription, scrollFrame, anchorIndex, false, presetButtonConfigs["TIMERS"], "|T237538:16:16|t Timers")
-	CreateCustomIconButtons(rootDescription, scrollFrame, anchorIndex, false, presetButtonConfigs["ITEMS"], "|T134856:16:16|t Items")
+
+	local presetButton = CreateCustomIconButtons(rootDescription, scrollFrame, anchorIndex, false, presetButtonConfigs, "Presets")
+	CreateCustomIconButtons(presetButton, scrollFrame, anchorIndex, false, presetButtonConfigs["TIMERS"], "|T237538:16:16|t Timers")
+	CreateCustomIconButtons(presetButton, scrollFrame, anchorIndex, false, presetButtonConfigs["ITEMS"], "|T134856:16:16|t Items")
+	
 	CreateCopyButtons(rootDescription, scrollFrame, anchorIndex, mode)
 	CreateExternalCustomEntries(rootDescription, scrollFrame, anchorIndex)
 end
