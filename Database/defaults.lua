@@ -73,11 +73,6 @@ SCM.DefaultDB = {
 			bloodlustConfig = {},
 		},
 		options = {
-			anchorUUFRoles = {
-				["HEALER"] = false,
-				["DAMAGER"] = true,
-				["TANK"] = true,
-			},
 			anchorElvUIRoles = {
 				["HEALER"] = false,
 				["DAMAGER"] = true,
