@@ -353,7 +353,9 @@ local function ProcessBuffIcon(child, childData, options)
 	child.SCMBuffOptions = options
 
 	local isInactive
-	if child.SCMCheckCooldownFrame then
+	if not issecretvalue(child.isActive) then
+		isInactive = not child.isActive
+	elseif child.SCMCheckCooldownFrame then
 		isInactive = not child.Cooldown:IsVisible() and not child.SCMFixedDuration
 	else
 		isInactive = not child.auraInstanceID or not child.auraDataUnit

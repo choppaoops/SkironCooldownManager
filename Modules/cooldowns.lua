@@ -21,15 +21,12 @@ function Cooldowns:ApplyFormatterSettings()
 	NumericRuleFormatter:SetBreakpoints(options.cooldownBreakpoints)
 end
 
-local function OnBuffCooldownSet(self)
-	local parent = (self.SCMConfig and self) or self.SCMParent or self:GetParent()
-	if not parent or not parent.SCMConfig or (not parent.SCMCheckCooldownFrame and not parent.auraInstanceID) then
-		return
-	end
-
+local function SetBuffActive(parent)
 	if parent.SCMUseFixedDuration then
 		parent.SCMFixedDuration = parent.SCMFixedDuration or GetTime() + parent.SCMUseFixedDuration
 	end
+
+	parent.SCMActive = true
 
 	if not parent.SCMHidden or (not SCM.isHideWhenInactiveEnabled and parent.SCMConfig.alwaysShow) then
 		Icons.UpdateChildDesaturation(parent, false)
@@ -47,12 +44,7 @@ local function OnBuffCooldownSet(self)
 	end
 end
 
-local function OnBuffCooldownEnd(self)
-	local parent = (self.SCMConfig and self) or self.SCMParent or self:GetParent()
-	if not parent or not parent.SCMConfig then
-		return
-	end
-
+local function SetBuffInactive(parent)
 	if parent.SCMFixedDuration and GetTime() < parent.SCMFixedDuration then
 		return
 	elseif parent:IsShown() and parent.Cooldown and parent.Cooldown:IsVisible() then
@@ -60,6 +52,7 @@ local function OnBuffCooldownEnd(self)
 	end
 
 	parent.SCMFixedDuration = nil
+	parent.SCMActive = nil
 
 	Icons.UpdateChildGlow(parent, true)
 
@@ -72,6 +65,44 @@ local function OnBuffCooldownEnd(self)
 	if not parent.SCMHidden or (parent.SCMHidden and parent.SCMConfig.showWhileInactive) then
 		SCM:ApplyAnchorGroupCDManagerConfig(parent.SCMGroup, nil, parent.viewerFrame and parent.viewerFrame.SCMUpdateScope)
 	end
+end
+
+local function OnBuffActiveStateChanged(self)
+	if not self.SCMConfig then
+		return
+	elseif issecretvalue(self.isActive) then
+		print("SECRET ACTIVE STATE", self.SCMSpellID, C_Spell.GetSpellName(self.SCMSpellID))
+		return
+	end
+
+	if self.isActive then
+		print("NOT SECRET ACTIVE", self.SCMSpellID, C_Spell.GetSpellName(self.SCMSpellID))
+		SetBuffActive(self)
+	else
+		print("NOT SECRET INACTIVE", self.SCMSpellID, C_Spell.GetSpellName(self.SCMSpellID))
+		SetBuffInactive(self)
+	end
+end
+
+local function OnBuffCooldownSet(self)
+	local parent = (self.SCMConfig and self) or self.SCMParent or self:GetParent()
+	if not parent or not parent.SCMConfig or not issecretvalue(self.isActive) or (not parent.SCMCheckCooldownFrame and not parent.auraInstanceID) then
+		return
+	end
+
+	print("BACKUP ACTIVE", parent.SCMSpellID, C_Spell.GetSpellName(parent.SCMSpellID))
+	SetBuffActive(parent)
+end
+
+local function OnBuffCooldownEnd(self)
+	local parent = (self.SCMConfig and self) or self.SCMParent or self:GetParent()
+	if not parent or not parent.SCMConfig or not issecretvalue(parent.isActive) then
+		return
+	end
+
+	print("BACKUP INACTIVE", parent.SCMSpellID, C_Spell.GetSpellName(parent.SCMSpellID))
+
+	SetBuffInactive(parent)
 end
 
 local function OnBuffShowPandemicStateFrame(self)
@@ -143,6 +174,7 @@ function Cooldowns.SetupBuffIconHooks(child, options)
 			hooksecurefunc(child, "OnAuraInstanceInfoSet", OnBuffCooldownSet)
 			hooksecurefunc(child.Cooldown, "Clear", OnBuffCooldownEnd)
 			child.Cooldown:HookScript("OnCooldownDone", OnBuffCooldownEnd)
+			hooksecurefunc(child, "OnActiveStateChanged", OnBuffActiveStateChanged)
 			child.SCMCooldownHooked = true
 		end
 
@@ -156,6 +188,8 @@ function Cooldowns.SetupBuffIconHooks(child, options)
 					OnBuffCooldownEnd(self)
 				end)
 			end)
+
+			hooksecurefunc(child, "OnActiveStateChanged", OnBuffActiveStateChanged)
 			child.SCMAuraHooked = true
 		end
 
