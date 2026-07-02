@@ -160,7 +160,9 @@ function SCM:PLAYER_EQUIPED_SPELLS_CHANGED()
 end
 
 function SCM:PLAYER_REGEN_DISABLED() end
-function SCM:PLAYER_REGEN_ENABLED() end
+function SCM:PLAYER_REGEN_ENABLED()
+	SCM.RefreshCooldownViewerData()
+end
 
 function SCM:EDIT_MODE_LAYOUTS_UPDATED()
 	SCM:UpdateDB()
