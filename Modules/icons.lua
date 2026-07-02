@@ -105,7 +105,14 @@ function Icons.SetChildVisibilityState(child, shouldShow, applyNow)
 	end
 
 	if child.SCMCustom and not child:GetAttribute("statehidden") then
-		child:SetShown(shouldShow and not child.SCMLayoutLimited)
+		local shouldBeShown = child.SCMShouldBeVisible and not child.SCMLayoutLimited
+		if child:IsShown() == shouldBeShown then
+			return
+		end
+
+		child.SCMSkipShowValidation = shouldBeShown and true or nil
+		child:SetShown(shouldBeShown)
+		child.SCMSkipShowValidation = nil
 	end
 end
 
@@ -156,9 +163,6 @@ local function OnShow(child)
 
 			if child.SCMFakeAuraInstanceID and child.SCMUseFixedDuration then
 				child.SCMFixedDuration = GetTime() + Constants.FakeAuras[child.SCMSpellID]
-			elseif child.auraInstanceID then
-				child.SCMAuraInstanceID = child.auraInstanceID or child.SCMAuraInstanceID
-				child.SCMAuraDataUnit = child.auraDataUnit or child.SCMAuraDataUnit
 			end
 		end
 
@@ -171,15 +175,10 @@ local function OnHide(child)
 		if child.SCMBuffBar then
 			if child.SCMFakeAuraInstanceID and child.SCMFixedDuration and GetTime() < child.SCMFixedDuration then
 				return
-			elseif child.SCMAuraInstanceID and child.SCMAuraDataUnit and not child.SCMFakeAuraInstanceID then
-				local auraData = C_UnitAuras.GetAuraDataByAuraInstanceID(child.SCMAuraDataUnit, child.SCMAuraInstanceID)
-				if auraData and auraData.isFromPlayerOrPlayerPet then
-					return
-				end
+			elseif child:IsShown() and child.Cooldown and child.Cooldown:IsVisible() then
+				return
 			end
 
-			child.SCMAuraInstanceID = nil
-			child.SCMAuraDataUnit = nil
 			child.SCMFixedDuration = nil
 
 			child.SCMFakeAuraInstanceID = nil
@@ -355,7 +354,7 @@ local function ProcessBuffIcon(child, childData, options)
 
 	local isInactive
 	if child.SCMCheckCooldownFrame then
-		isInactive = not child.Cooldown:IsVisible()
+		isInactive = not child.Cooldown:IsVisible() and not child.SCMFixedDuration
 	else
 		isInactive = not child.auraInstanceID or not child.auraDataUnit
 	end
@@ -392,7 +391,7 @@ local function ProcessBuffBar(child, childData, options)
 	Icons.SetupBuffBarHooks(child)
 	child.SCMBuffBarOptions = options
 
-	local isInactive = not child.auraInstanceID and not child.SCMFakeAuraInstanceID and not child.SCMAuraInstanceID
+	local isInactive = not child.auraInstanceID and not child.SCMFakeAuraInstanceID
 	local forceShow = SCM.simulateBuffs or (not SCM.isHideWhenInactiveEnabled and childData.alwaysShow)
 	local shouldHide = isInactive and not forceShow
 
@@ -415,7 +414,7 @@ local function ProcessSingleChild(child, validChildren, categoryIndex, isBuffIco
 	local cooldownID = child:GetCooldownID() or child.SCMCooldownID
 	local categoryConfig = categoryIndex and SCM.defaultCooldownViewerConfig[categoryIndex]
 	local info = categoryConfig and (categoryConfig[cooldownID] or SCM.defaultCooldownViewerConfig.cooldownIDs[cooldownID])
-	local spellID = info and (info.overrideSpellID or info.spellID)
+	local spellID = info and (info.overrideTooltipSpellID or info.overrideSpellID or info.spellID)
 	if info and info.linkedSpellIDs and #info.linkedSpellIDs == 1 then
 		child.SCMLinkedSpellID = info.linkedSpellIDs[1]
 	end

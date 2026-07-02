@@ -27,10 +27,7 @@ local function OnBuffCooldownSet(self)
 		return
 	end
 
-	if parent.auraInstanceID and (not parent.SCMAuraInstanceID or parent.auraInstanceID ~= parent.SCMAuraInstanceID) and parent.auraDataUnit == "player" then
-		parent.SCMAuraInstanceID = parent.auraInstanceID
-		parent.SCMAuraDataUnit = parent.auraDataUnit or parent.SCMAuraDataunit
-	elseif parent.SCMUseFixedDuration then
+	if parent.SCMUseFixedDuration then
 		parent.SCMFixedDuration = parent.SCMFixedDuration or GetTime() + parent.SCMUseFixedDuration
 	end
 
@@ -56,15 +53,9 @@ local function OnBuffCooldownEnd(self)
 		return
 	end
 
-	if parent.SCMAuraInstanceID and not parent.SCMCheckCooldownFrame then
-		local auraData = C_UnitAuras.GetAuraDataByAuraInstanceID(parent.SCMAuraDataUnit, parent.SCMAuraInstanceID)
-		if auraData and auraData.isFromPlayerOrPlayerPet then
-			return
-		else
-			parent.SCMAuraInstanceID = nil
-			parent.SCMAuraDataUnit = nil
-		end
-	elseif parent.SCMFixedDuration and GetTime() < parent.SCMFixedDuration then
+	if parent.SCMFixedDuration and GetTime() < parent.SCMFixedDuration then
+		return
+	elseif parent:IsShown() and parent.Cooldown and parent.Cooldown:IsVisible() then
 		return
 	end
 
@@ -72,7 +63,7 @@ local function OnBuffCooldownEnd(self)
 
 	Icons.UpdateChildGlow(parent, true)
 
-	if (not SCM.isHideWhenInactiveEnabled and parent.SCMConfig.alwaysShow) then
+	if not SCM.isHideWhenInactiveEnabled and parent.SCMConfig.alwaysShow then
 		Icons.UpdateChildDesaturation(parent, true)
 		return
 	end
@@ -100,24 +91,39 @@ local function OnBuffShowPandemicStateFrame(self)
 		self.SCMPandemicStop = nil
 	end
 
-	if not self.SCMPandemic and not self.SCMGlow and options.pandemicGlowOption == "replacePandemicGlow" then
+	if not self.SCMPandemic and options.pandemicGlowOption == "replacePandemicGlow" then
 		self.SCMPandemic = true
-		SCM:StartCustomGlow(self)
+
+		if options.pandemicReplaceWithBorder and self.pandemicBorder then
+			self.pandemicBorder:Show()
+		elseif not self.SCMGlow then
+			if options.pandemicReplaceWithCustomGlow then
+				SCM:StartCustomGlow(self, options.pandemicCustomGlowTypeOptions[options.pandemicGlowType], options.pandemicGlowType)
+			else
+				SCM:StartCustomGlow(self)
+			end
+		end
 	end
 end
 
 local function OnBuffHidePandemicStateFrame(self)
-	local options = self.SCMBuffOptions or self.SCMIconOptions
-	if not options then
+	if not self.SCMPandemic or self.SCMPandemicStop then
 		return
 	end
 
-	if self.SCMPandemic and self.SCMGlow and options.pandemicGlowOption == "replacePandemicGlow" then
-		self.SCMPandemicStop = self.SCMPandemicStop or C_Timer.NewTimer(0.1, function()
-			SCM:StopCustomGlow(self)
-			self.SCMPandemic = nil
-		end)
+	local options = self.SCMBuffOptions or self.SCMIconOptions
+	if not options or options.pandemicGlowOption ~= "replacePandemicGlow" then
+		return
 	end
+
+	self.SCMPandemicStop = C_Timer.NewTimer(0.1, function()
+		if options.pandemicReplaceWithBorder and self.pandemicBorder then
+			self.pandemicBorder:Hide()
+		else
+			SCM:StopCustomGlow(self)
+		end
+		self.SCMPandemic = nil
+	end)
 end
 
 function Cooldowns.SetupBuffIconHooks(child, options)
@@ -130,9 +136,11 @@ function Cooldowns.SetupBuffIconHooks(child, options)
 	child.SCMBuffOptions = options
 
 	-- Cooldowns
+
 	if checkCooldownFrame then
 		if not child.SCMCooldownHooked then
 			hooksecurefunc(child.Cooldown, "SetCooldown", OnBuffCooldownSet)
+			hooksecurefunc(child, "OnAuraInstanceInfoSet", OnBuffCooldownSet)
 			hooksecurefunc(child.Cooldown, "Clear", OnBuffCooldownEnd)
 			child.Cooldown:HookScript("OnCooldownDone", OnBuffCooldownEnd)
 			child.SCMCooldownHooked = true
@@ -143,7 +151,11 @@ function Cooldowns.SetupBuffIconHooks(child, options)
 	else
 		if not child.SCMAuraHooked then
 			hooksecurefunc(child, "OnAuraInstanceInfoSet", OnBuffCooldownSet)
-			hooksecurefunc(child, "OnAuraInstanceInfoCleared", OnBuffCooldownEnd)
+			hooksecurefunc(child, "OnAuraInstanceInfoCleared", function(self)
+				C_Timer.After(0, function()
+					OnBuffCooldownEnd(self)
+				end)
+			end)
 			child.SCMAuraHooked = true
 		end
 
@@ -221,7 +233,7 @@ function Cooldowns.SetNormalCooldown(self, parent)
 			self:SetDrawSwipe(true)
 			self:SetCooldownFromDurationObject(durationObject)
 		end
-	elseif not self:GetUseAuraDisplayTime() or (options.disableRegularIconActiveSwipe and not parent.SCMConfig.forceActiveSwipe)  then
+	elseif not self:GetUseAuraDisplayTime() or (options.disableRegularIconActiveSwipe and not parent.SCMConfig.forceActiveSwipe) then
 		parent.Icon.SCMDesaturated = nil
 		parent.Icon:SetDesaturated(false)
 		self:Clear()

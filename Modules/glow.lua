@@ -3,7 +3,7 @@ local LibCustomGlow = LibStub("LibCustomGlow-1.0")
 
 local activeGlows = {}
 
-function SCM:StartCustomGlow(child)
+function SCM:StartCustomGlow(child, glowTypeOptions, glowType)
 	if not child then
 		return
 	end
@@ -13,8 +13,10 @@ function SCM:StartCustomGlow(child)
 
 	-- Per-icon glow type override: a buff/icon can opt into its own glow style
 	-- (Pixel/Autocast/Proc/Button) instead of the single global one, mirroring
-	-- the existing per-icon custom glow colour. Falls back to options.glowType.
-	local glowType = (childConfig and childConfig.useCustomGlowType and childConfig.customGlowType) or options.glowType
+	-- the existing per-icon custom glow colour. An explicit glowType argument
+	-- (e.g. pandemic/preview callers) wins, then the per-icon override, then
+	-- the global options.glowType.
+	local glowType = glowType or (childConfig and childConfig.useCustomGlowType and childConfig.customGlowType) or options.glowType
 
 	if child.SCMGlow and glowType == child.SCMGlow then
 		return
@@ -28,7 +30,7 @@ function SCM:StartCustomGlow(child)
 		return
 	end
 
-	local glowTypeOptions = options.glowTypeOptions[glowType]
+	local glowTypeOptions = glowTypeOptions or options.glowTypeOptions[glowType]
 	local color = childConfig.useCustomGlowColor and childConfig.customGlowColor or glowTypeOptions.glowColor
 	child.SCMGlow = glowType
 

@@ -717,8 +717,7 @@ local function GetChargedSegmentMap(bar, segmentCount, currentValue)
 	end
 
 	local isMaelstromWeaponResource = bar.resourceKind == "maelstromWeapon"
-	local hasNumericSegmentValues = type(segmentCount) == "number" and type(currentValue) == "number"
-	if not isMaelstromWeaponResource or not hasNumericSegmentValues then
+	if not isMaelstromWeaponResource or not (type(segmentCount) == "number" and type(currentValue) == "number") then
 		return
 	end
 
