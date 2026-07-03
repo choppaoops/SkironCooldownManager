@@ -28,7 +28,12 @@ Custom-Widgets\AceGUIContainer-SCMScrollFrame.lua
 Custom-Widgets\AceGUIContainer-SCMHorizontalScrollFrame.lua
 
 Database\curves.lua
-Database\constants.lua
+Database\constants\constants.lua
+Database\constants\castbar.lua
+Database\constants\cdm.lua
+Database\constants\character.lua
+Database\constants\cooldown.lua
+Database\constants\resourcebar.lua
 Database\defaults.lua
 Database\sharedmedia.lua
 Database\config.lua
