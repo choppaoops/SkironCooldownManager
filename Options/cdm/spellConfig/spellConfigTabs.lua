@@ -11,6 +11,7 @@ local iconTypeTabs = {
 		{ value = "display", text = "Display" },
 		{ value = "cooldown", text = "Cooldown" },
 		{ value = "glow", text = "Glow" },
+		{ value = "state", text = "States (NYI)" },
 		{ value = "load", text = "Load Conditions" },
 	},
 	spell = {},

@@ -90,6 +90,27 @@ Constants.BlendModeSorted = {
 	"MOD",
 }
 
+Constants.States = {
+	["active"] = "Active",
+	["inactive"] = "Inactive",
+	["ready"] = "Ready",
+	["cooldown"] = "On Cooldown",
+	["nocharges"] = "No Charges",
+	["maxcharges"] = "Max Charges",
+	["recharging"] = "Recharging",
+	["ongcd"] = "On GCD"
+}
+
+Constants.StatesSorted = {
+	"ready",
+	"cooldown",
+	"active",
+	"inactive",
+	"nocharges",
+	"maxcharges",
+	"recharging",
+}
+
 Constants.ResourceBarGrowthDirection = {
 	UP = "Up",
 	DOWN = "Down",
