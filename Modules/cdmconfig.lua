@@ -140,7 +140,7 @@ end
 
 local function CreateCooldownBreakpoints(options)
 	if not options.cooldownBreakpoints or #options.cooldownBreakpoints == 0 then
-		options.cooldownBreakpoints = CopyTable(self.Constants.CooldownTimer.DefaultBreakpoints)
+		options.cooldownBreakpoints = CopyTable(SCM.Constants.CooldownTimer.DefaultBreakpoints)
 	else
 		for _, breakpoint in ipairs(options.cooldownBreakpoints) do
 			if not breakpoint.threshold then
