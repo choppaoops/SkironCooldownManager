@@ -61,7 +61,7 @@ local function SetBuffInactive(parent, isActiveState)
 		return
 	end
 
-	print("INACTIVE", parent.SCMSpellID, C_Spell.GetSpellName(parent.SCMSpellID), parent.SCMHidden)
+	-- print("INACTIVE", parent.SCMSpellID, C_Spell.GetSpellName(parent.SCMSpellID), parent.SCMHidden)
 	--local options = parent.SCMBuffOptions
 	if not parent.SCMHidden or (parent.SCMHidden and parent.SCMConfig.showWhileInactive) then
 		SCM:ApplyAnchorGroupCDManagerConfig(parent.SCMGroup, nil, parent.viewerFrame and parent.viewerFrame.SCMUpdateScope)
@@ -72,15 +72,15 @@ local function OnBuffActiveStateChanged(self)
 	if not self.SCMConfig then
 		return
 	elseif issecretvalue(self.isActive) then
-		print("SECRET ACTIVE STATE", self.SCMSpellID, C_Spell.GetSpellName(self.SCMSpellID))
+		-- print("SECRET ACTIVE STATE", self.SCMSpellID, C_Spell.GetSpellName(self.SCMSpellID))
 		return
 	end
 
 	if self.isActive then
-		print("NOT SECRET ACTIVE", self.SCMSpellID, C_Spell.GetSpellName(self.SCMSpellID))
+		-- print("NOT SECRET ACTIVE", self.SCMSpellID, C_Spell.GetSpellName(self.SCMSpellID))
 		SetBuffActive(self)
 	else
-		print("NOT SECRET INACTIVE", self.SCMSpellID, C_Spell.GetSpellName(self.SCMSpellID))
+		-- print("NOT SECRET INACTIVE", self.SCMSpellID, C_Spell.GetSpellName(self.SCMSpellID))
 		SetBuffInactive(self, true)
 	end
 end
@@ -91,7 +91,7 @@ local function OnBuffCooldownSet(self)
 		return
 	end
 
-	print("BACKUP ACTIVE", parent.SCMSpellID, C_Spell.GetSpellName(parent.SCMSpellID))
+	-- print("BACKUP ACTIVE", parent.SCMSpellID, C_Spell.GetSpellName(parent.SCMSpellID))
 	SetBuffActive(parent)
 end
 
@@ -101,7 +101,7 @@ local function OnBuffCooldownEnd(self)
 		return
 	end
 
-	print("BACKUP INACTIVE", parent.SCMSpellID, C_Spell.GetSpellName(parent.SCMSpellID))
+	-- print("BACKUP INACTIVE", parent.SCMSpellID, C_Spell.GetSpellName(parent.SCMSpellID))
 
 	SetBuffInactive(parent)
 end
