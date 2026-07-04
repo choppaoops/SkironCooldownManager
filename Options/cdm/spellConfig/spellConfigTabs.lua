@@ -11,6 +11,7 @@ local iconTypeTabs = {
 		{ value = "display", text = "Display" },
 		{ value = "cooldown", text = "Cooldown" },
 		{ value = "glow", text = "Glow" },
+		{ value = "subregion", text = "Subregions (NYI)" },
 		{ value = "state", text = "States (NYI)" },
 		{ value = "load", text = "Load Conditions" },
 	},
@@ -85,6 +86,8 @@ function CDMOptions.CreateSpellConfigTabs(parentScrollFrame, iconSettings, butto
 				CDMOptions.CreateGlowTabSettings(self, iconSettings, parentScrollFrame, buttonFrame, buttonData, iconConfig, anchorIndex, mode, isGlobal, isBuffBar)
 			elseif group == "state" then
 				CDMOptions.CreateStateTabSettings(self, iconSettings, parentScrollFrame, buttonFrame, buttonData, iconConfig, anchorIndex, mode, isGlobal, isBuffBar)
+			elseif group == "subregion" then
+				CDMOptions.CreateSubregionTabSettings(self, iconSettings, parentScrollFrame, buttonFrame, buttonData, iconConfig, anchorIndex, mode, isGlobal, isBuffBar)
 			elseif group == "items" then
 				CDMOptions.CreateItemsTabSettings(self, iconSettings, parentScrollFrame, buttonFrame, buttonData, iconConfig, anchorIndex, mode, isGlobal, isBuffBar)
 			elseif group == "filter" then

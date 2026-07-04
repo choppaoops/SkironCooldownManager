@@ -17,36 +17,52 @@ local function GetUnusedStates(iconConfig)
 	return states, statesSorted
 end
 
-local function AddStateVisibilityOptions(stateGroup, state, stateOptions)
-	local showToggle = AceGUI:Create("CheckBox")
-	showToggle:SetRelativeWidth(0.5)
-	showToggle:SetLabel("Show Icon")
-	stateGroup:AddChild(showToggle)
+local function GetSubregionList(subregionOptions)
+	if not subregionOptions then
+		return
+	end
 
-	local hideToggle = AceGUI:Create("CheckBox")
-	hideToggle:SetRelativeWidth(0.5)
-	hideToggle:SetLabel("Hide Icon")
-	stateGroup:AddChild(hideToggle)
+	local subregions = {}
+	for index, subregionData in ipairs(subregionOptions) do
+		subregions[subregionData] = subregionData.type:gsub("^%l", strupper) .. " " .. index
+	end
+
+	return subregions
 end
 
-local function AddStateGlowOptions(stateGroup, state, stateOptions)
+local function AddStateVisibilityOptions(stateGroup, state, stateOptions)
+	local toggleVisibility = AceGUI:Create("CheckBox")
+	toggleVisibility:SetRelativeWidth(0.33)
+	toggleVisibility:SetLabel("Change Visibility")
+	stateGroup:AddChild(toggleVisibility)
+
+	local visibilityDropdown = AceGUI:Create("Dropdown")
+	visibilityDropdown:SetLabel("Visibility")
+	visibilityDropdown:SetRelativeWidth(0.67)
+	visibilityDropdown:SetList(Constants.Visibility, Constants.VisibilitySorted)
+	stateGroup:AddChild(visibilityDropdown)
+end
+
+local function AddStateGlowOptions(stateGroup, state, stateOptions, subregionOptions)
 	local glowToggle = AceGUI:Create("CheckBox")
-	glowToggle:SetRelativeWidth(0.5)
+	glowToggle:SetRelativeWidth(0.33)
 	glowToggle:SetLabel("Glow")
 	stateGroup:AddChild(glowToggle)
 
 	local glowRegionDropdown = AceGUI:Create("Dropdown")
 	glowRegionDropdown:SetLabel("Subregion")
-	glowRegionDropdown:SetRelativeWidth(0.5)
+	glowRegionDropdown:SetRelativeWidth(0.33)
+	glowRegionDropdown:SetList(GetSubregionList(subregionOptions))
 	stateGroup:AddChild(glowRegionDropdown)
 
 	local glowVisiblityDropdown = AceGUI:Create("Dropdown")
 	glowVisiblityDropdown:SetLabel("Visibility")
 	glowVisiblityDropdown:SetRelativeWidth(0.33)
+	glowVisiblityDropdown:SetList(Constants.Visibility, Constants.VisibilitySorted)
 	stateGroup:AddChild(glowVisiblityDropdown)
 end
 
-local function AddStateBorderOptions(stateGroup, state, stateOptions)
+local function AddStateBorderOptions(stateGroup, state, stateOptions, subregionOptions)
 	local borderToggle = AceGUI:Create("CheckBox")
 	borderToggle:SetRelativeWidth(0.33)
 	borderToggle:SetLabel("Border")
@@ -55,16 +71,19 @@ local function AddStateBorderOptions(stateGroup, state, stateOptions)
 	local borderRegionDropdown = AceGUI:Create("Dropdown")
 	borderRegionDropdown:SetLabel("Subregion")
 	borderRegionDropdown:SetRelativeWidth(0.33)
+	borderRegionDropdown:SetList(GetSubregionList(subregionOptions))
 	stateGroup:AddChild(borderRegionDropdown)
 
 	local borderVisiblityDropdown = AceGUI:Create("Dropdown")
 	borderVisiblityDropdown:SetLabel("Visibility")
 	borderVisiblityDropdown:SetRelativeWidth(0.33)
+	borderVisiblityDropdown:SetList(Constants.Visibility, Constants.VisibilitySorted)
 	stateGroup:AddChild(borderVisiblityDropdown)
 end
 
 local function AddStateOptions(state, iconSettingsTabs, scrollFrame, iconConfig, isGlobal, isBuffBar)
 	local stateOptions = iconConfig.stateOptions[state]
+	local subregionOptions = iconConfig.subregionOptions
 
 	local stateGroup = AceGUI:Create("InlineGroup")
 	stateGroup:SetLayout("flow")
@@ -73,8 +92,8 @@ local function AddStateOptions(state, iconSettingsTabs, scrollFrame, iconConfig,
 	scrollFrame:AddChild(stateGroup)
 
 	AddStateVisibilityOptions(stateGroup, state, stateOptions)
-	AddStateGlowOptions(stateGroup, state, stateOptions)
-	AddStateBorderOptions(stateGroup, state, stateOptions)
+	AddStateGlowOptions(stateGroup, state, stateOptions, subregionOptions["glow"])
+	AddStateBorderOptions(stateGroup, state, stateOptions, subregionOptions["border"])
 
 	local removeStateButton = AceGUI:Create("Button")
 	removeStateButton:SetText("Remove")
