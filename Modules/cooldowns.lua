@@ -209,6 +209,8 @@ function Cooldowns.SetupBuffIconHooks(child, options)
 end
 
 function Cooldowns.GetChildCooldown(child)
+	if not child.SCMSpellID then return end
+	
 	local cooldownData = SCM.defaultCooldownViewerConfig.cooldownIDs[child.SCMCooldownID]
 
 	local durationObject

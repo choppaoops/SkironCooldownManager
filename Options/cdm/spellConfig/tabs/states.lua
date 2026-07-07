@@ -48,7 +48,7 @@ end
 local function GetUsedStateTabs(iconConfig)
 	local stateTabs = {}
 
-	for _, stateValue in ipairs(Constants.StatesSorted) do
+	for _, stateValue in ipairs(iconConfig.selectedStates) do
 		if iconConfig.usedStates[stateValue] then
 			tinsert(stateTabs, { value = stateValue, text = Constants.States[stateValue] })
 		end
@@ -200,6 +200,13 @@ local function AddStateOptions(state, stateTabs, iconConfig, stateDropdown)
 		iconConfig.usedStates[state] = nil
 		iconConfig.stateOptions[state] = nil
 
+		for stateIndex, stateValue in ipairs(iconConfig.selectedStates) do
+			if stateValue == state then
+				tremove(iconConfig.selectedStates, stateIndex)
+				break
+			end
+		end
+
 		stateDropdown:SetList(GetUnusedStates(iconConfig))
 		local usedStateTabs = GetUsedStateTabs(iconConfig)
 		stateTabs:SetTabs(usedStateTabs)
@@ -217,6 +224,7 @@ function CDMOptions.CreateStateTabSettings(iconSettingsTabs, iconSettings, paren
 	if not isBuffBar then
 		iconConfig.stateOptions = iconConfig.stateOptions or {}
 		iconConfig.usedStates = iconConfig.usedStates or {}
+		iconConfig.selectedStates = iconConfig.selectedStates or {}
 
 		local rootGroup = AceGUI:Create("SimpleGroup")
 		rootGroup:SetLayout("fill")
@@ -276,6 +284,7 @@ function CDMOptions.CreateStateTabSettings(iconSettingsTabs, iconSettings, paren
 
 			iconConfig.usedStates[selectedState] = true
 			iconConfig.stateOptions[selectedState] = iconConfig.stateOptions[selectedState] or {}
+			tinsert(iconConfig.selectedStates, selectedState)
 
 			stateTabs:SetTabs(GetUsedStateTabs(iconConfig))
 			stateTabs:SelectTab(selectedState)
