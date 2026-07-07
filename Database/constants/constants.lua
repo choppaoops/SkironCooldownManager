@@ -171,6 +171,6 @@ Constants.SCMAnchors = {
 		["Secondary Resource Bar"] = "SCM_SecondaryResourceBar",
 		["Anchor"] = "SCM_GroupAnchor_#",
 		["Global Anchor"] = "SCM_GroupAnchor_10#",
-		["Buff Bar Anchor"] = "SCM_BuffBarAnchor_20#"
+		["Buff Bar Anchor"] = "SCM_GroupAnchor_20#"
 	},
 }
