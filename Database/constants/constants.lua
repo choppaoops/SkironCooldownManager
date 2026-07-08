@@ -103,10 +103,24 @@ Constants.States = {
 }
 
 Constants.StatesSorted = {
-	"ready",
-	"cooldown",
-	"active",
-	"inactive",
+	["spell"] = {
+		"ready",
+		"cooldown",
+		"active",
+		"inactive",
+	},
+	["item"] = {
+		"ready",
+		"cooldown",
+	},
+	["slot"] = {
+		"ready",
+		"cooldown",
+	},
+	["custom"] = {
+		"ready",
+		"cooldown",
+	},
 	-- "nocharges",
 	-- "maxcharges",
 	-- "recharging",
@@ -146,7 +160,7 @@ Constants.GlowTypesSorted = {
 	"Pixel",
 	"Proc",
 	"Autocast",
-	"Button"
+	"Button",
 }
 
 Constants.ResourceBarGrowthDirection = {
@@ -170,6 +184,6 @@ Constants.SCMAnchors = {
 		["Primary Resource Bar"] = "SCM_PrimaryResourceBar",
 		["Secondary Resource Bar"] = "SCM_SecondaryResourceBar",
 		["Anchor"] = "SCM_GroupAnchor_#",
-		["Global Anchor"] = "SCM_GroupAnchor_10#"
+		["Global Anchor"] = "SCM_GroupAnchor_10#",
 	},
 }
