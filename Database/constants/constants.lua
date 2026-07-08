@@ -100,11 +100,6 @@ Constants.States = {
 	-- ["recharging"] = "Recharging",
 	-- ["ongcd"] = "On GCD",
 	-- ["mounted"] = "Mounted"
-	-- ["nocharges"] = "No Charges",
-	-- ["maxcharges"] = "Max Charges",
-	-- ["recharging"] = "Recharging",
-	-- ["ongcd"] = "On GCD",
-	-- ["mounted"] = "Mounted"
 }
 
 Constants.StatesSorted = {
