@@ -256,9 +256,9 @@ local function ApplyStateOptions(child, skipLayoutRefresh, state)
 	if not effectRules then
 		if state.Visibility == false then
 			state.Visibility = true
+			state.UpdateRequired = true
 			if child.SCMShouldBeVisible ~= true then
 				SetChildVisibilityState(child, true, true)
-				state.UpdateRequired = true
 			end
 		else
 			state.Visibility = true
@@ -293,6 +293,7 @@ local function ApplyStateOptions(child, skipLayoutRefresh, state)
 			shouldShow = rule.value ~= "hide"
 		end
 
+		state.UpdateRequired = state.Visibility ~= shouldShow
 		state.Visibility = shouldShow
 		if child.SCMShouldBeVisible ~= shouldShow then
 			SetChildVisibilityState(child, shouldShow, true)
@@ -300,9 +301,9 @@ local function ApplyStateOptions(child, skipLayoutRefresh, state)
 		end
 	elseif state.Visibility == false then
 		state.Visibility = true
+		state.UpdateRequired = true
 		if child.SCMShouldBeVisible ~= true then
 			SetChildVisibilityState(child, true, true)
-			state.UpdateRequired = true
 		end
 	else
 		state.Visibility = true

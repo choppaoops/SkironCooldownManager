@@ -358,7 +358,12 @@ local function ProcessBuffIcon(child, childData, options, refreshStates)
 		isInactive = not child.auraInstanceID or not child.auraDataUnit
 	end
 
-	local forceShow = SCM.simulateBuffs or (not SCM.isHideWhenInactiveEnabled and childData.alwaysShow)
+	if not child.SCMState then
+		States.SyncState(child, not isInactive, nil, true, true)
+	end
+
+
+	local forceShow = SCM.simulateBuffs or (not SCM.isHideWhenInactiveEnabled and (childData.alwaysShow or (child.SCMState and child.SCMState.Visibility)))
 	local shouldHide = (childData.showWhileInactive and not isInactive) or (isInactive and not (forceShow or childData.showWhileInactive))
 	local wasVisible = child.SCMShouldBeVisible
 
@@ -370,9 +375,6 @@ local function ProcessBuffIcon(child, childData, options, refreshStates)
 
 	child.SCMChanged = child.SCMChanged or not wasVisible
 	Icons.SetChildVisibilityState(child, true, true)
-	if refreshStates then
-		States.SyncState(child, not isInactive, nil, true, true)
-	end
 	Icons.UpdateChildDesaturation(child, isInactive)
 	Icons.UpdateChildGlow(child, isInactive)
 end
