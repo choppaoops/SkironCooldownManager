@@ -19,7 +19,7 @@ local iconTypeTabs = {
 		{ value = "items", text = "Items" },
 	},
 	timer = {},
-	bloodlust = { { value = "glow", text = "Glow" } },
+	bloodlust = {},
 	slot = {
 		{ value = "filter", text = "Filter" },
 	},
@@ -83,8 +83,6 @@ function CDMOptions.CreateSpellConfigTabs(parentScrollFrame, iconSettings, butto
 				CDMOptions.CreateDisplayTabSettings(self, iconSettings, parentScrollFrame, buttonFrame, buttonData, iconConfig, anchorIndex, mode, isGlobal, isBuffBar)
 			elseif group == "load" then
 				CDMOptions.CreateLoadTabSettings(self, iconSettings, parentScrollFrame, buttonFrame, buttonData, iconConfig, anchorIndex, mode, isGlobal, isBuffBar)
-			elseif group == "glow" then
-				CDMOptions.CreateGlowTabSettings(self, iconSettings, parentScrollFrame, buttonFrame, buttonData, iconConfig, anchorIndex, mode, isGlobal, isBuffBar)
 			elseif group == "state" then
 				CDMOptions.ShowIconSettingsMessage(self, iconSettingsTabs, "|TInterface\\common\\help-i:40:40:0:0|tThese options are subject to change.")
 				CDMOptions.CreateStateTabSettings(self, iconSettings, parentScrollFrame, buttonFrame, buttonData, iconConfig, anchorIndex, mode, isGlobal, isBuffBar)

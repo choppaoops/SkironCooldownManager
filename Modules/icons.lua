@@ -382,7 +382,7 @@ end
 local function ProcessRegularIcon(child, childData, options, refreshStates)
 	Icons.SetupRegularIconHooks(child, options)
 
-	if refreshStates then
+	if not child.SCMState then
 		local isActive = (child.Cooldown and child.Cooldown:GetUseAuraDisplayTime()) or false
 		States.SyncState(child, isActive, Cooldowns.GetChildCooldown(child), true, true)
 	end

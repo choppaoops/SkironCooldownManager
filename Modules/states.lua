@@ -179,7 +179,6 @@ local function ShowStateBorder(child, key, borderOptions, refreshID)
 
 	border:SetBackdropBorderColor(r, g, b, a)
 
-
 	local shouldShow = borderSize ~= 0
 	if not shouldShow and border.SCMStateBorderShown ~= false then
 		border:Hide()
@@ -365,23 +364,26 @@ local function UpdateState(child, updateActive, isActive, updateCooldown, isOnCo
 	end
 
 	state = state or States.GetState(child)
-	local changed = (forceRefresh or not effectRules) and true or false
+	local changed = (forceRefresh or not effectRules)
 
 	if updateActive then
 		local active
 		if isActive ~= nil then
-			active = isActive and true or false
+			active = isActive
 		end
+
 		if state.Active ~= active then
 			state.Active = active
 			changed = true
 		end
 	end
+
 	if updateCooldown then
 		local cooldown
 		if isOnCooldown ~= nil then
-			cooldown = isOnCooldown and true or false
+			cooldown = isOnCooldown
 		end
+
 		if state.Cooldown ~= cooldown then
 			state.Cooldown = cooldown
 			changed = true

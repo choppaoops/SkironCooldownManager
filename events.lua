@@ -169,10 +169,7 @@ function SCM:EDIT_MODE_LAYOUTS_UPDATED()
 	SCM:ApplyOptions()
 end
 
-local function RefreshPixelPerfectLayout()
-	SCM:InvalidatePixelPerfectCache()
-	SCM:ApplyAllCDManagerConfigs()
-end
+
 
 function SCM:TRAIT_CONFIG_UPDATED()
 	C_Timer.After(0.5, function()
@@ -187,6 +184,11 @@ function SCM:ACTIVE_PLAYER_SPECIALIZATION_CHANGED()
 	C_Timer.After(0.5, function()
 		SCM.RefreshCooldownViewerData(true)
 	end)
+end
+
+local function RefreshPixelPerfectLayout()
+	SCM:InvalidatePixelPerfectCache()
+	SCM:ApplyAllCDManagerConfigs()
 end
 
 function SCM:UI_SCALE_CHANGED()
