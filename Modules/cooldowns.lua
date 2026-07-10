@@ -324,7 +324,7 @@ local function OnRegularCooldownChanged(self, changeType)
 
 	if config.effectRules then
 		RunNextFrame(function()
-			States.SyncState(parent, useAuraDisplayTime, Cooldowns.GetChildCooldown(parent))
+			States.SyncState(parent, useAuraDisplayTime, (Cooldowns.GetChildCooldown(parent)))
 		end)
 	end
 
