@@ -171,7 +171,9 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, an
 		local chargeColour = AceGUI:Create("ColorPicker")
 		chargeColour:SetLabel("Colour")
 		chargeColour:SetRelativeWidth(0.33)
-		rowConfig.chargeColour = rowConfig.chargeColour or options.chargeColour
+		if not rowConfig.chargeColour then
+			rowConfig.chargeColour = options.chargeColour or {r = 1, g = 1, b = 1, a = 1}
+		end
 		chargeColour:SetColor(rowConfig.chargeColour.r, rowConfig.chargeColour.g, rowConfig.chargeColour.b, rowConfig.chargeColour.a or 1)
 		chargeColour:SetCallback("OnValueChanged", function(_, _, r, g, b, a)
 			rowConfig.chargeColour = { r = r, g = g, b = b, a = a }
