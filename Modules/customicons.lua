@@ -803,6 +803,7 @@ end
 local function RequestCustomItemDataLoad(itemID, requestedItemIDs)
 	if not requestedItemIDs[itemID] then
 		requestedItemIDs[itemID] = true
+		SCM:RegisterEvent("ITEM_DATA_LOAD_RESULT")
 		C_Item.RequestLoadItemDataByID(itemID)
 	end
 end
@@ -865,6 +866,7 @@ local function RequestCustomIconDataLoad(config, requestedSpellIDs, requestedIte
 	if (iconType == "spell" or iconType == "timer") and config.spellID then
 		if not requestedSpellIDs[config.spellID] then
 			requestedSpellIDs[config.spellID] = true
+			SCM:RegisterEvent("SPELL_DATA_LOAD_RESULT")
 			C_Spell.RequestLoadSpellData(config.spellID)
 		end
 		return

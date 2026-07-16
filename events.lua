@@ -1,5 +1,20 @@
 local SCM = select(2, ...)
 local eventFrame
+local registeredEvents = {}
+
+function SCM:RegisterEvent(event)
+	if not registeredEvents[event] then
+		registeredEvents[event] = true
+		eventFrame:RegisterEvent(event)
+	end
+end
+
+local function UnregisterEvent(event)
+	if registeredEvents[event] then
+		registeredEvents[event] = nil
+		eventFrame:UnregisterEvent(event)
+	end
+end
 
 function SCM:PLAYER_ENTERING_WORLD(isInitialLogin, isReload)
 	if isInitialLogin or isReload then
@@ -32,8 +47,6 @@ function SCM:PLAYER_ENTERING_WORLD(isInitialLogin, isReload)
 		eventFrame:RegisterEvent("DISPLAY_SIZE_CHANGED")
 		eventFrame:RegisterEvent("ACTIONBAR_SLOT_CHANGED")
 		eventFrame:RegisterEvent("CVAR_UPDATE")
-		eventFrame:RegisterEvent("SPELL_DATA_LOAD_RESULT")
-		eventFrame:RegisterEvent("ITEM_DATA_LOAD_RESULT")
 		eventFrame:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", "player")
 	elseif self.isInInstance ~= IsInInstance() then
 		SCM.RefreshCooldownViewerData()
@@ -62,6 +75,9 @@ function SCM:ITEM_DATA_LOAD_RESULT(itemID, success)
 		return
 	end
 	requestedItemIDs[itemID] = nil
+	if not next(requestedItemIDs) then
+		UnregisterEvent("ITEM_DATA_LOAD_RESULT")
+	end
 
 	if success then
 		SCM.CustomIcons.CreateItemIcon(itemID)
@@ -219,6 +235,9 @@ function SCM:SPELL_DATA_LOAD_RESULT(spellID, success)
 		return
 	end
 	requestedSpellIDs[spellID] = nil
+	if not next(requestedSpellIDs) then
+		UnregisterEvent("SPELL_DATA_LOAD_RESULT")
+	end
 
 	if success then
 		SCM.CustomIcons.CreateSpellIcon(spellID)
