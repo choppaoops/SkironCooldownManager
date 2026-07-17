@@ -4,6 +4,113 @@ local Utils = SCM.Utils
 local GetCooldownConfigKey = Utils.GetCooldownConfigKey
 local ToBuffBarGroup = Utils.ToBuffBarGroup
 local IsBuffBarGroup = Utils.IsBuffBarGroup
+local GlobalGlowSubregion = SCM.Constants.GlobalGlowSubregion
+
+local function SetEffectRules(config, effect, rules)
+	local effectRules = config.effectRules
+
+	if not effectRules[effect] then
+		effectRules[effect] = {
+			rules = rules,
+		}
+	end
+end
+
+local function MigrateVisibilityRules(config, isBuffIcon)
+	local hasVisibilityRules = config.effectRules.visibility ~= nil
+	local shouldCreateRules = isBuffIcon or config.hideWhenInactive or config.hideWhenNotOnCooldown
+
+	if not hasVisibilityRules and shouldCreateRules then
+		local rules
+		if isBuffIcon then
+			if config.showWhileInactive then
+				rules = {
+					{ state = "active", value = "hide" },
+					{ state = "inactive", value = "show" },
+				}
+			elseif config.alwaysShow then
+				rules = {
+					{ state = "active", value = "show" },
+					{ state = "inactive", value = "show" },
+				}
+			else
+				rules = {
+					{ state = "active", value = "show" },
+					{ state = "inactive", value = "hide" },
+				}
+			end
+		elseif config.hideWhenNotOnCooldown then
+			rules = {
+				{ state = "cooldown", value = "show" },
+				{ state = "ready", value = "hide" },
+			}
+		else
+			rules = {
+				{ state = "active", value = "show" },
+				{ state = "inactive", value = "hide" },
+			}
+		end
+
+		SetEffectRules(config, "visibility", rules)
+	end
+
+	config.hideWhenInactive = nil
+	config.hideWhenNotOnCooldown = nil
+	config.alwaysShow = nil
+	config.showWhileInactive = nil
+end
+
+local function MigrateDesaturateRules(config, isBuffIcon)
+	local hasDesaturateRules = config.effectRules.desaturate ~= nil
+	if not hasDesaturateRules and isBuffIcon then
+		local rules = {
+			{ state = "active", enabled = false },
+		}
+
+		if config.desaturate then
+			rules[2] = { state = "inactive", enabled = true }
+		elseif config.alwaysShow or config.showWhileInactive then
+			rules[2] = { state = "inactive", enabled = false }
+		end
+
+		SetEffectRules(config, "desaturate", rules)
+	end
+
+	config.desaturate = nil
+end
+
+local function MigrateGlowRules(config)
+	local hasGlowRules = config.effectRules.glow ~= nil
+	local shouldCreateRules = config.glowWhileActive or config.glowWhileInactive
+
+	if not hasGlowRules and shouldCreateRules then
+		local state = config.glowWhileActive and "active" or "inactive"
+		SetEffectRules(config, "glow", {
+			{ state = state, subregion = GlobalGlowSubregion },
+		})
+	end
+
+	config.glowWhileActive = nil
+	config.glowWhileInactive = nil
+end
+
+function SCM:MigrateLegacyIconOptions(spellConfig)
+	for _, config in pairs(spellConfig) do
+		local source = config.source
+		local anchorGroups = config.anchorGroup
+
+		local buffIconGroup = source[Enum.CooldownViewerCategory.TrackedBuff]
+		for anchorGroup, anchorGroupConfig in pairs(anchorGroups) do
+			if not IsBuffBarGroup(anchorGroup) then
+				local isBuffIcon = anchorGroup == buffIconGroup
+				anchorGroupConfig.effectRules = anchorGroupConfig.effectRules or {}
+				MigrateDesaturateRules(anchorGroupConfig, isBuffIcon)
+				MigrateVisibilityRules(anchorGroupConfig, isBuffIcon)
+				MigrateGlowRules(anchorGroupConfig)
+			end
+		end
+	end
+end
 
 local function HasAnchorConfig(anchorGroup, anchorConfig, buffBarsAnchorConfig)
 	anchorGroup = tonumber(anchorGroup)
