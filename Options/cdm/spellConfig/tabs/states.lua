@@ -34,6 +34,8 @@ local function SetDefaultRuleValues(rule, effectKey, iconConfig)
 		if rule.enabled == nil then
 			rule.enabled = option.defaultEnabled
 		end
+	elseif effectKey == "glow" and not rule.subregion then
+		rule.subregion = Constants.GlobalGlowSubregion
 	elseif option.subregionType and not rule.subregion then
 		local subregions = iconConfig.subregionOptions and iconConfig.subregionOptions[option.subregionType]
 		if subregions and subregions[1] then
@@ -92,19 +94,23 @@ end
 
 local function GetSubregionList(iconConfig, subregionType)
 	local subregionOptions = iconConfig.subregionOptions and iconConfig.subregionOptions[subregionType]
-	if not subregionOptions then
-		return {}, {}
+	local subregions, subregionsSorted = {}, {}
+
+	if subregionType == "glow" then
+		subregions[Constants.GlobalGlowSubregion] = "Global Glow"
+		tinsert(subregionsSorted, Constants.GlobalGlowSubregion)
 	end
 
-	local subregions, subregionsSorted = {}, {}
-	for index, subregionData in ipairs(subregionOptions) do
-		local name = (Constants.Subregions[subregionData.type] or "Subregion") .. " " .. index
-		if subregionData.type == "glow" and subregionData.glowType then
-			name = (Constants.GlowTypes[subregionData.glowType] or subregionData.glowType) .. " " .. name
-		end
+	if subregionOptions then
+		for index, subregionData in ipairs(subregionOptions) do
+			local name = (Constants.Subregions[subregionData.type] or "Subregion") .. " " .. index
+			if subregionData.type == "glow" and subregionData.glowType then
+				name = (Constants.GlowTypes[subregionData.glowType] or subregionData.glowType) .. " " .. name
+			end
 
-		subregions[index] = name
-		tinsert(subregionsSorted, index)
+			subregions[index] = name
+			tinsert(subregionsSorted, index)
+		end
 	end
 
 	return subregions, subregionsSorted

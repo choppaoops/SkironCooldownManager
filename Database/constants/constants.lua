@@ -136,6 +136,8 @@ Constants.VisibilitySorted = {
 	"hide",
 }
 
+Constants.GlobalGlowSubregion = "global"
+
 Constants.Subregions = {
 	["glow"] = "Glow",
 	["border"] = "Border",

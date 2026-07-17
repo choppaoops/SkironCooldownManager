@@ -3,6 +3,7 @@ local States = SCM.States
 local Icons = SCM.Icons
 local SetChildVisibilityState = Icons.SetChildVisibilityState
 local UpdateChildDesaturation = Icons.UpdateChildDesaturation
+local GlobalGlowSubregion = SCM.Constants.GlobalGlowSubregion
 
 function States.GetState(child)
 	if not child.SCMState then
@@ -52,18 +53,25 @@ function States.StopStateGlows(child)
 	state.ActiveStateGlows = nil
 end
 
+local function GetGlowOptions(config, subregion)
+	if subregion == GlobalGlowSubregion then
+		local options = SCM.db.profile.options
+		local glowType = options.glowType
+		local glowTypeOptions = glowType and options.glowTypeOptions and options.glowTypeOptions[glowType]
+		return glowType, glowTypeOptions
+	end
+
+	local subregionOptions = config.subregionOptions and config.subregionOptions.glow
+	local glowOptions = subregionOptions and subregionOptions[subregion]
+	local glowType = glowOptions and glowOptions.glowType
+	local glowTypeOptions = glowType and glowOptions.glowTypeOptions and glowOptions.glowTypeOptions[glowType]
+	return glowType, glowTypeOptions
+end
+
 local function ApplyGlowRules(child, state, config, effectConfig, cooldownRuleState, activeRuleState)
 	local rules = effectConfig.rules
 	local activeStateGlows = state.ActiveStateGlows
 	if not rules or not rules[1] then
-		if activeStateGlows then
-			States.StopStateGlows(child)
-		end
-		return
-	end
-
-	local subregionOptions = config.subregionOptions and config.subregionOptions.glow
-	if not subregionOptions or not subregionOptions[1] then
 		if activeStateGlows then
 			States.StopStateGlows(child)
 		end
@@ -75,9 +83,7 @@ local function ApplyGlowRules(child, state, config, effectConfig, cooldownRuleSt
 
 	local rule, index = GetNextMatchedRule(rules, 1, cooldownRuleState, activeRuleState)
 	while rule do
-		local glowOptions = subregionOptions[rule.subregion]
-		local glowType = glowOptions and glowOptions.glowType
-		local glowTypeOptions = glowType and glowOptions.glowTypeOptions and glowOptions.glowTypeOptions[glowType]
+		local glowType, glowTypeOptions = GetGlowOptions(config, rule.subregion)
 		if glowTypeOptions then
 			local key = "SCMStateGlow_" .. tostring(rule.state) .. "_" .. tostring(rule.subregion)
 			activeStateGlows = activeStateGlows or {}
