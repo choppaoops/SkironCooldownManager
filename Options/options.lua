@@ -313,6 +313,11 @@ function SCM:ApplyOptions()
 end
 
 local function OpenOptions()
+	if InCombatLockdown() then
+		SCM:Print("Can't open the options while in combat.")
+		return
+	end
+
 	SCM.isOptionsOpen = true
 	SCM.simulateBuffs = true
 
