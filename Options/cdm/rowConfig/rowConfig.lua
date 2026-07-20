@@ -172,7 +172,8 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, an
 		chargeColour:SetLabel("Colour")
 		chargeColour:SetRelativeWidth(0.33)
 		if not rowConfig.chargeColour then
-			rowConfig.chargeColour = options.chargeColour or {r = 1, g = 1, b = 1, a = 1}
+			local optionsChargeColour = options.chargeColour
+			rowConfig.chargeColour = {r = optionsChargeColour.r or 1, g = optionsChargeColour.g or 1, b = optionsChargeColour.b or 1, a = optionsChargeColour.a or 1}
 		end
 		chargeColour:SetColor(rowConfig.chargeColour.r, rowConfig.chargeColour.g, rowConfig.chargeColour.b, rowConfig.chargeColour.a or 1)
 		chargeColour:SetCallback("OnValueChanged", function(_, _, r, g, b, a)
