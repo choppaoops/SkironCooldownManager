@@ -32,7 +32,7 @@ local function ApplyChargeAndApplicationStyle(child, options, fontPath)
 		)
 
 		local chargeColour = rowConfig.chargeColour or options.chargeColour
-		child.ChargeCount.Current:SetTextColor(chargeColour.r, chargeColour.g, chargeColour.b, chargeColour.a or 1)
+		child.ChargeCount.Current:SetTextColor(chargeColour.r or 1, chargeColour.g or 1, chargeColour.b or 1, chargeColour.a or 1)
 
 		child.ChargeCount.Current.SCMRowConfig = rowConfig
 
