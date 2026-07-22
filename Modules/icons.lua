@@ -106,7 +106,11 @@ function Icons.UpdateChildDesaturation(child, shouldDesaturate, forceDesaturatio
 			child.Icon.SCMDesaturated = nil
 		end
 
-		child.Icon:SetDesaturated(shouldDesaturate)
+		if child.Icon.Icon then
+			child.Icon.Icon:SetDesaturated(shouldDesaturate)
+		else
+			child.Icon:SetDesaturated(shouldDesaturate)
+		end
 	end
 end
 
